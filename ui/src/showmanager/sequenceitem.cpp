@@ -20,6 +20,7 @@
 #include <QApplication>
 #include <QPainter>
 #include <QMenu>
+#include <qmath.h>
 
 #include "sequenceitem.h"
 #include "headeritems.h"
@@ -50,13 +51,13 @@ SequenceItem::SequenceItem(Chaser *seq, ShowFunction *func)
 void SequenceItem::calculateWidth()
 {
     int newWidth = 0;
-    unsigned long seq_duration = m_chaser->totalDuration();
+    unsigned long seq_duration = getDuration();//m_chaser->totalDuration();
 
     if (seq_duration != 0)
         newWidth = ((50/(float)getTimeScale()) * (float)seq_duration) / 1000;
 
-    if (newWidth < (50 / m_timeScale))
-        newWidth = 50 / m_timeScale;
+    //if (newWidth < (50 / m_timeScale))
+    //    newWidth = 50 / m_timeScale;
     setWidth(newWidth);
 }
 
@@ -70,7 +71,9 @@ void SequenceItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
 
     if (this->isSelected() == false)
         m_selectedStep = -1;
-
+    int loopCount = m_function->duration() ? qFloor(m_function->duration() / m_chaser->totalDuration()) : 0;
+    for (int i = 0; i < loopCount; i++)
+    {
     foreach (ChaserStep step, m_chaser->steps())
     {
         uint stepFadeIn = step.fadeIn;
@@ -121,6 +124,16 @@ void SequenceItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
         }
         stepIdx++;
     }
+    //xpos += stepWidth;
+    //xpos += ((timeScale * float(m_chaser->totalDuration())) / 1000);
+    // draw loop vertical delimiter
+
+    if(i < loopCount -1)
+    {
+    painter->setPen(QPen(Qt::red, 1));
+    painter->drawLine(int(xpos), 1, int(xpos), TRACK_HEIGHT - 5);
+    }
+    }
 
     ShowItem::postPaint(painter);
 }
@@ -133,8 +146,21 @@ void SequenceItem::setTimeScale(int val)
 
 void SequenceItem::setDuration(quint32 msec, bool stretch)
 {
-    Q_UNUSED(stretch)
-    m_chaser->setTotalDuration(msec);
+    if (stretch == true)
+    {
+        m_chaser->setTotalDuration(msec);
+    }
+    else
+    {
+        if (m_function)
+            m_function->setDuration(msec);
+        prepareGeometryChange();
+        calculateWidth();
+        updateTooltip();
+    }
+
+    //Q_UNUSED(stretch)
+    //m_chaser->setTotalDuration(msec);
 }
 
 QString SequenceItem::functionName()

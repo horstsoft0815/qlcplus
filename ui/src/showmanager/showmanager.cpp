@@ -1485,9 +1485,9 @@ void ShowManager::slotShowTimingsTool()
     Function *func = m_doc->function(item->functionID());
     if (func != NULL)
     {
-        if (func->type() == Function::AudioType)
+        if (func->type() == Function::AudioType && func->type() != Function::ChaserType)
             tt->showDurationControls(false);
-        if (func->type() == Function::RGBMatrixType || func->type() == Function::EFXType)
+        if (func->type() == Function::ChaserType || func->type() == Function::RGBMatrixType || func->type() == Function::EFXType)
             tt->showDurationOptions(true);
     }
 
