@@ -5,7 +5,7 @@
 #include "audio/frame.h"
 #include "track/beats.h"
 #include "track/bpm.h"
-#include "track/keys.h"
+//#include "track/keys.h"
 #include "util/types.h"
 
 namespace mixxx {
@@ -78,11 +78,11 @@ class AnalyzerBeatsPlugin : public AnalyzerPlugin {
     }
 };
 
-class AnalyzerKeyPlugin : public AnalyzerPlugin {
+/*class AnalyzerKeyPlugin : public AnalyzerPlugin {
   public:
     ~AnalyzerKeyPlugin() override = default;
 
     virtual KeyChangeList getKeyChanges() const = 0;
-};
+};*/
 
 } // namespace mixxx
