@@ -30,3 +30,6 @@ SUBDIRS              += artnet
 SUBDIRS              += E1.31
 SUBDIRS              += loopback
 SUBDIRS              += osc
+SUBDIRS              += qm-dsp
+SUBDIRS              += samplerate
+SUBDIRS              += btrack
