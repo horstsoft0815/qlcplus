@@ -2,27 +2,29 @@ include(../../variables.pri)
 
 TEMPLATE = lib
 LANGUAGE = C
-TARGET   = samplerate
+TARGET   = btrack
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 #CONFIG      += plugin
 
+INCLUDEPATH += ../samplerate/include
+DEPENDPATH += ../samplerate
+
+LIBS        += ../samplerate/libsamplerate.so
+
+DEFINES += USE_FFTW
+
 DISTFILES += \
-    AUTHORS \
-    COPYING \
+    LICENSE.txt \
     README.md
 
 HEADERS += \
-    config.h \
-    include/samplerate.h \
-    src/common.h \
-    src/fastest_coeffs.h \
-    src/high_qual_coeffs.h \
-    src/mid_qual_coeffs.h
+    src/BTrack.h \
+    src/CircularBuffer.h \
+    src/OnsetDetectionFunction.h
 
 SOURCES += \
-    src/samplerate.c \
-    src/src_linear.c \
-    src/src_sinc.c \
-    src/src_zoh.c
+    src/BTrack.cpp \
+    src/OnsetDetectionFunction.cpp
+
