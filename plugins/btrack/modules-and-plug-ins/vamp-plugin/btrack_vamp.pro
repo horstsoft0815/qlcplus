@@ -2,7 +2,7 @@ include(../../variables.pri)
 
 TEMPLATE = lib
 LANGUAGE = C++
-TARGET   = samplerate
+TARGET   = btrack_vamp
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -11,15 +11,16 @@ TARGET   = samplerate
 DEFINES += USE_FFTW
 
 DISTFILES += \
-    LICENSE.txt \
-    README.md
+    INSTALL.md \
+    vamp-plugin.list \
+    vamp-plugin.map
 
 HEADERS += \
-    src/BTrack.h \
-    src/CircularBuffer.h \
-    src/OnsetDetectionFunction.h
+    BTrackVamp.h
 
 SOURCES += \
-    src/BTrack.cpp \
-    src/OnsetDetectionFunction.cpp
+    BTrackVamp.cpp \
+    plugins.cpp
+
+
 
