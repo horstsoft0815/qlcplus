@@ -224,6 +224,11 @@ public:
 
     /** @reimp */
     bool saveXML(QXmlStreamWriter *doc);
+
+private:
+    bool loadXMLImpl(QXmlStreamReader &root);
+
+    bool saveXMLImpl(QXmlStreamWriter *doc);
 };
 
 #endif

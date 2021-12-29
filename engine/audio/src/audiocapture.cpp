@@ -34,8 +34,11 @@
 
 AudioCapture::AudioCapture (QObject* parent)
     : QThread (parent)
+    , m_IsFrequencyAnalysisActive(true)
+    , m_IsTimeFrameAnalysisActive(false)
     , m_userStop(true)
     , m_pause(false)
+    , m_bufferSize(0)
     , m_captureSize(0)
     , m_sampleRate(0)
     , m_channels(0)
@@ -43,8 +46,9 @@ AudioCapture::AudioCapture (QObject* parent)
     , m_audioMixdown(NULL)
     , m_fftInputBuffer(NULL)
     , m_fftOutputBuffer(NULL)
+    , m_audioBufferF64()
 {
-    bufferSize = AUDIO_DEFAULT_BUFFER_SIZE;
+    m_bufferSize = AUDIO_DEFAULT_BUFFER_SIZE;
     m_sampleRate = AUDIO_DEFAULT_SAMPLE_RATE;
     m_channels = AUDIO_DEFAULT_CHANNELS;
 
@@ -61,14 +65,16 @@ AudioCapture::AudioCapture (QObject* parent)
 
     qDebug() << "[AudioCapture] initialize" << m_sampleRate << m_channels;
 
-    m_captureSize = bufferSize * m_channels;
+    m_captureSize = m_bufferSize * m_channels;
 
     m_audioBuffer = new int16_t[m_captureSize];
-    m_audioMixdown = new int16_t[bufferSize];
-    m_fftInputBuffer = new double[bufferSize];
+    m_audioMixdown = new int16_t[m_bufferSize];
+    m_fftInputBuffer = new double[m_bufferSize];
 #ifdef HAS_FFTW3
-    m_fftOutputBuffer = fftw_malloc(sizeof(fftw_complex) * bufferSize);
+    m_fftOutputBuffer = fftw_malloc(sizeof(fftw_complex) * m_bufferSize);
 #endif
+
+    m_audioBufferF64.resize(m_bufferSize);
 }
 
 AudioCapture::~AudioCapture()
@@ -156,14 +162,14 @@ double AudioCapture::fillBandsData(int number)
     double maxMagnitude = 0.;
 #ifdef HAS_FFTW3
     unsigned int i = 1; // skip DC bin
-    int subBandWidth = ((bufferSize * SPECTRUM_MAX_FREQUENCY) / m_sampleRate) / number;
+    int subBandWidth = ((m_bufferSize * SPECTRUM_MAX_FREQUENCY) / m_sampleRate) / number;
 
     for (int b = 0; b < number; b++)
     {
         double magnitudeSum = 0.;
         for (int s = 0; s < subBandWidth; s++, i++)
         {
-            if (i == bufferSize)
+            if (i == m_bufferSize)
                 break;
             magnitudeSum += qSqrt((((fftw_complex*)m_fftOutputBuffer)[i][0] * ((fftw_complex*)m_fftOutputBuffer)[i][0]) +
                                   (((fftw_complex*)m_fftOutputBuffer)[i][1] * ((fftw_complex*)m_fftOutputBuffer)[i][1]));
@@ -188,13 +194,13 @@ void AudioCapture::processData()
 
     // 1 ********* Initialize FFTW
     fftw_plan plan_forward;
-    plan_forward = fftw_plan_dft_r2c_1d(bufferSize, m_fftInputBuffer, (fftw_complex*)m_fftOutputBuffer , 0);
+    plan_forward = fftw_plan_dft_r2c_1d(m_bufferSize, m_fftInputBuffer, (fftw_complex*)m_fftOutputBuffer , 0);
 
     // 2 ********* Apply a window to audio data
     // *********** and convert it to doubles
 
     // Mix down the channels to mono
-    for (i = 0; i < bufferSize; i++)
+    for (i = 0; i < m_bufferSize; i++)
     {
         m_audioMixdown[i] = 0;
         for (j = 0; j < m_channels; j++)
@@ -203,17 +209,17 @@ void AudioCapture::processData()
         }
     }
 
-    for (i = 0; i < bufferSize; i++)
+    for (i = 0; i < m_bufferSize; i++)
     {
 #ifdef USE_BLACKMAN
         double a0 = (1-0.16)/2;
         double a1 = 0.5;
         double a2 = 0.16/2;
-        m_fftInputBuffer[i] = m_audioMixdown[i] * (a0 - a1 * qCos((M_2PI * i) / (bufferSize - 1)) +
-                              a2 * qCos((2 * M_2PI * i) / (bufferSize - 1))) / 32768.;
+        m_fftInputBuffer[i] = m_audioMixdown[i] * (a0 - a1 * qCos((M_2PI * i) / (m_bufferSize - 1)) +
+                              a2 * qCos((2 * M_2PI * i) / (m_bufferSize - 1))) / 32768.;
 #endif
 #ifdef USE_HANNING
-        m_fftInputBuffer[i] = m_audioMixdown[i] * (0.5 * (1.00 - qCos((M_2PI * i) / (bufferSize - 1)))) / 32768.;
+        m_fftInputBuffer[i] = m_audioMixdown[i] * (0.5 * (1.00 - qCos((M_2PI * i) / (m_bufferSize - 1)))) / 32768.;
 #endif
 #ifdef USE_NO_WINDOW
         m_fftInputBuffer[i] = (double)m_audioMixdown[i] / 32768.;
@@ -251,6 +257,23 @@ void AudioCapture::processData()
 #endif
 }
 
+void AudioCapture::prepareTimeFrameData()
+{
+    assert(m_bufferSize == m_audioBufferF64.size());
+
+    // Mix down the channels to mono
+    for (unsigned int i = 0; i < m_bufferSize; i++)
+    {
+        m_audioBufferF64[i] = 0;
+        for (unsigned int j = 0; j < m_channels; j++)
+        {
+            m_audioBufferF64[i] += static_cast<double>(m_audioBuffer[i*m_channels + j]) / m_channels;
+        }
+    }
+
+    emit preparedTimeFrameData(m_audioBufferF64);
+}
+
 void AudioCapture::run()
 {
     qDebug() << "[AudioCapture] start capture";
@@ -270,7 +293,16 @@ void AudioCapture::run()
             if (readAudio(m_captureSize) == true)
             {
                 QMutexLocker locker(&m_mutex);
-                processData();
+
+                if(m_IsFrequencyAnalysisActive)
+                {
+                    processData();
+                }
+
+                if(m_IsTimeFrameAnalysisActive)
+                {
+                    prepareTimeFrameData();
+                }
             }
             else
             {

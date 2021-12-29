@@ -52,7 +52,7 @@ struct BandsData
 class AudioCapture : public QThread
 {
     Q_OBJECT
-public:
+public:  
     /*!
      * Object contsructor.
      * @param parent Parent object.
@@ -120,6 +120,14 @@ protected:
     void stop();
 
 private:
+    bool m_IsFrequencyAnalysisActive;
+    bool m_IsTimeFrameAnalysisActive;
+
+public:
+    void SetIsFrequencyAnalysisActive(const bool val_p) { m_IsFrequencyAnalysisActive = val_p; }
+    void SetIsTimeFrameAnalysisActive(const bool val_p) { m_IsTimeFrameAnalysisActive = val_p; }
+
+private:
     /** This is called at every processData to fill a single BandsData structure */
     double fillBandsData(int number);
 
@@ -129,11 +137,13 @@ private:
      *  3) retrieve the signal magnitude for each registered number of bands
      */
     void processData();
+    void prepareTimeFrameData();
 
     bool m_userStop, m_pause;
 
 signals:
     void dataProcessed(double *spectrumBands, int size, double maxMagnitude, quint32 power);
+    void preparedTimeFrameData(const std::vector<double>& timeFrameData_p);
 
 protected:
     /*!
@@ -145,7 +155,7 @@ protected:
 
     QMutex m_mutex;
 
-    unsigned int bufferSize, m_captureSize, m_sampleRate, m_channels;
+    unsigned int m_bufferSize, m_captureSize, m_sampleRate, m_channels;
 
     /** Data buffer for audio data coming from the sound card */
     int16_t *m_audioBuffer;
@@ -159,6 +169,12 @@ protected:
 
     /** Map of the registered clients (key is the number of bands) */
     QMap <int, BandsData> m_fftMagnitudeMap;
+
+    /** **************** time frame analysis ********************** */
+    std::vector<double> m_audioBufferF64;
+
+public:
+    unsigned int GetBufferSize() const { return m_bufferSize; }
 };
 
 /** @} */

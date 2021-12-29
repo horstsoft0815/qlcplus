@@ -139,8 +139,8 @@ void BTrack::initialise (int hopSize_, int frameSize_)
     // in case it is requested before any processing takes place
     latestCumulativeScoreValue = 0;
     
-    // initialise algorithm given the hopsize
-    setHopSize(hopSize_);
+    // initialise algorithm given the hopsize and framesize
+    updateHopAndFrameSize(hopSize_, frameSize_);
     
     
     // Set up FFT for calculating the auto-correlation function

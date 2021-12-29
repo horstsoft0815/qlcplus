@@ -866,20 +866,34 @@ void VCButton::adjustIntensity(qreal val)
 /*****************************************************************************
  * Load & Save
  *****************************************************************************/
-
 bool VCButton::loadXML(QXmlStreamReader &root)
+{
+    if (root.name() != KXMLQLCVCButton)
+    {
+        qWarning() << Q_FUNC_INFO << "Button node not found";
+        return false;
+    }
+
+    return loadXMLImpl(root);
+}
+
+bool VCButton::saveXML(QXmlStreamWriter *doc)
+{
+    Q_ASSERT(doc != NULL);
+
+    /* VC button entry */
+    doc->writeStartElement(KXMLQLCVCButton);
+
+    return saveXMLImpl(doc);
+}
+
+bool VCButton::loadXMLImpl(QXmlStreamReader &root)
 {
     bool visible = false;
     int x = 0;
     int y = 0;
     int w = 0;
     int h = 0;
-
-    if (root.name() != KXMLQLCVCButton)
-    {
-        qWarning() << Q_FUNC_INFO << "Button node not found";
-        return false;
-    }
 
     /* Widget commons */
     loadXMLCommon(root);
@@ -944,13 +958,8 @@ bool VCButton::loadXML(QXmlStreamReader &root)
     return true;
 }
 
-bool VCButton::saveXML(QXmlStreamWriter *doc)
+bool VCButton::saveXMLImpl(QXmlStreamWriter *doc)
 {
-    Q_ASSERT(doc != NULL);
-
-    /* VC button entry */
-    doc->writeStartElement(KXMLQLCVCButton);
-
     saveXMLCommon(doc);
 
     /* Icon */

@@ -8,6 +8,10 @@ TARGET   = samplerate
 
 #CONFIG      += plugin
 
+target.path = $$INSTALLROOT/$$PLUGINDIR
+INSTALLS   += target
+
+
 DISTFILES += \
     AUTHORS \
     COPYING \

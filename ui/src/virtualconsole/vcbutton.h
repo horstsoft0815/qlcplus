@@ -370,6 +370,8 @@ public:
      */
     bool loadXML(QXmlStreamReader &root);
 
+    bool loadXMLImpl(QXmlStreamReader &root);
+
     /**
      * Save a VCButton's properties to an XML document node
      *
@@ -377,6 +379,10 @@ public:
      * @param frame_root The button's VCFrame XML parent node to save to
      */
     bool saveXML(QXmlStreamWriter *doc);
+
+    bool saveXMLImpl(QXmlStreamWriter *doc);
+
+private:
 
     /*********************************************************************
      * Event Handlers

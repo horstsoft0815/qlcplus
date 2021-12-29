@@ -11,6 +11,7 @@
 #include <vamp-sdk/Plugin.h>
 #include "../../src/BTrack.h"
 
+#include <string>
 using std::string;
 
 

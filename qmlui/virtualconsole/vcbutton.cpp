@@ -490,6 +490,21 @@ bool VCButton::loadXML(QXmlStreamReader &root)
         return false;
     }
 
+    loadXMLImpl(root);
+}
+
+bool VCButton::saveXML(QXmlStreamWriter *doc)
+{
+    Q_ASSERT(doc != nullptr);
+
+    /* VC button entry */
+    doc->writeStartElement(KXMLQLCVCButton);
+
+    saveXMLImpl(doc);
+}
+
+bool VCButton::loadXMLImpl(QXmlStreamReader &root)
+{
     /* Widget commons */
     loadXMLCommon(root);
 
@@ -548,13 +563,8 @@ bool VCButton::loadXML(QXmlStreamReader &root)
     return true;
 }
 
-bool VCButton::saveXML(QXmlStreamWriter *doc)
+bool VCButton::saveXMLImpl(QXmlStreamWriter *doc)
 {
-    Q_ASSERT(doc != nullptr);
-
-    /* VC button entry */
-    doc->writeStartElement(KXMLQLCVCButton);
-
     saveXMLCommon(doc);
 
     /* Window state */

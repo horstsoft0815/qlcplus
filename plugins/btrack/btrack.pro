@@ -15,6 +15,9 @@ LIBS        += ../samplerate/libsamplerate.so
 
 DEFINES += USE_FFTW
 
+target.path = $$INSTALLROOT/$$PLUGINDIR
+INSTALLS   += target
+
 DISTFILES += \
     LICENSE.txt \
     README.md

@@ -40,6 +40,7 @@
 #include "vcpropertieseditor.h"
 #include "vcframeproperties.h"
 #include "vcaudiotriggers.h"
+#include "vcbeattriggers.h"
 #include "virtualconsole.h"
 #include "vcsoloframe.h"
 #include "vcspeeddial.h"
@@ -1151,6 +1152,18 @@ bool VCFrame::loadXML(QXmlStreamReader &root)
             {
                 addWidgetToPageMap(button);
                 button->show();
+            }
+        }
+        else if (root.name() == KXMLQLCVCBeatTriggers)
+        {
+            /* Create a new button into its parent */
+            VCBeatTriggers* beattriggers = new VCBeatTriggers(this, m_doc);
+            if (beattriggers->loadXML(root) == false)
+                delete beattriggers;
+            else
+            {
+                addWidgetToPageMap(beattriggers);
+                beattriggers->show();
             }
         }
         else if (root.name() == KXMLQLCVCXYPad)
