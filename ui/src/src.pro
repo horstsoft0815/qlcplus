@@ -27,8 +27,10 @@ INCLUDEPATH     += ../../webaccess
 
 # Beat tracking
 INCLUDEPATH += ../../plugins/btrack/src
-DEPENDPATH  += ../../plugins/btrack/src
-LIBS        += ../../plugins/btrack/libbtrack.so
+DEPENDPATH  += ../../plugins/btrack
+#LIBS        += ../../plugins/btrack/libbtrack.so
+QMAKE_LIBDIR    += ../../plugins/btrack
+LIBS        += -lbtrack
 
 # Resources
 RESOURCES    += qlcui.qrc
