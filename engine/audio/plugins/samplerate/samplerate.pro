@@ -1,8 +1,14 @@
-include(../../variables.pri)
+include(../../../../variables.pri)
 
 TEMPLATE = lib
 LANGUAGE = C
 TARGET   = samplerate
+
+INCLUDEPATH += ../../src
+CONFIG  += staticlib
+
+CONFIG += link_pkgconfig
+#PKGCONFIG   += samplerate
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

@@ -39,6 +39,8 @@
 #define KXMLQLCVCATBarsNumber "BarsNumber"
 
 #define KXMLQLCVolumeBar    "VolumeBar"
+#define KXMLQLCBeatBar    "BeatBar"
+#define KXMLQLCBPMBar    "BPMBar"
 #define KXMLQLCSpectrumBar  "SpectrumBar"
 
 const QSize VCAudioTriggers::defaultSize(QSize(300, 200));
@@ -53,6 +55,9 @@ VCAudioTriggers::VCAudioTriggers(QWidget* parent, Doc* doc)
     , m_volumeSlider(NULL)
 #endif
     , m_inputCapture(NULL)
+    , m_volumeBar(NULL)
+    , m_beatBar(NULL)
+    , m_bpmBar(NULL)
 {
     /* Set the class name "VCAudioTriggers" as the object name as well */
     setObjectName(VCAudioTriggers::staticMetaObject.className());
@@ -110,6 +115,8 @@ VCAudioTriggers::VCAudioTriggers(QWidget* parent, Doc* doc)
     // create the  AudioBar items to hold the spectrum data.
     // To be loaded from the project
     m_volumeBar = new AudioBar(AudioBar::None, 0, id());
+    m_beatBar = new AudioBar(AudioBar::None, 0, id());
+    m_bpmBar = new AudioBar(AudioBar::None, 0, id());
     for (int i = 0; i < m_inputCapture->defaultBarsNumber(); i++)
     {
         AudioBar *asb = new AudioBar(AudioBar::None, 0, id());
@@ -189,6 +196,19 @@ void VCAudioTriggers::enableCapture(bool enable)
     {
         connect(m_inputCapture, SIGNAL(dataProcessed(double*,int,double,quint32)),
                 this, SLOT(slotDisplaySpectrum(double*,int,double,quint32)));
+
+        //beat detection
+        {
+            //m_inputCapture->SetIsFrequencyAnalysisActive(false);
+            m_inputCapture->SetIsTimeFrameAnalysisActive(true);
+
+            connect(m_inputCapture, SIGNAL(detectedBeat(const bool)),
+                    this, SLOT(slotDetectBeat(const bool)));
+
+            connect(m_inputCapture, SIGNAL(detectedBPM(const quint32)),
+                    this, SLOT(slotDetectBPM(const quint32)));
+        }
+
         m_inputCapture->registerBandsNumber(m_spectrum->barsNumber());
 
         m_button->blockSignals(true);
@@ -207,6 +227,15 @@ void VCAudioTriggers::enableCapture(bool enable)
             m_inputCapture->unregisterBandsNumber(m_spectrum->barsNumber());
             disconnect(m_inputCapture, SIGNAL(dataProcessed(double*,int,double,quint32)),
                        this, SLOT(slotDisplaySpectrum(double*,int,double,quint32)));
+
+            // beat detection
+            {
+                disconnect(m_inputCapture, SIGNAL(detectedBeat(const bool)),
+                        this, SLOT(slotDetectBeat(const bool)));
+
+                disconnect(m_inputCapture, SIGNAL(detectedBPM(const quint32)),
+                        this, SLOT(slotDetectBPM(const quint32)));
+            }
         }
 
         m_button->blockSignals(true);
@@ -261,6 +290,25 @@ void VCAudioTriggers::slotDisplaySpectrum(double *spectrumBands, int size,
             m_spectrumBars[i]->checkWidgetFunctionality();
     }
 }
+
+void VCAudioTriggers::slotDetectBeat(const bool isBeat_p)
+{
+    if(m_beatBar && m_spectrum)
+    {
+        m_beatBar->m_value = isBeat_p ? m_beatBar->m_maxThreshold : 0;
+        m_spectrum->displayBeat(isBeat_p);
+    } // if(m_beatBar)
+}
+
+void VCAudioTriggers::slotDisplayBPM(const quint32 bpm_p)
+{
+    if(m_bpmBar && m_spectrum)
+    {
+        m_bpmBar->m_value = m_spectrum->getUcharBPM();
+        m_spectrum->displayBPM(bpm_p);
+    }
+}
+
 
 #if QT_VERSION >= 0x050000
 void VCAudioTriggers::slotVolumeChanged(int volume)
@@ -485,6 +533,13 @@ AudioBar *VCAudioTriggers::getSpectrumBar(int index)
 {
     if (index == volumeBarIndex())
         return m_volumeBar;
+
+    if (index == beatBarIndex())
+        return m_beatBar;
+
+    if (index == bpmBarIndex())
+        return m_bpmBar;
+
     if (index >= 0 && index < m_spectrumBars.size())
         return m_spectrumBars.at(index);
 
@@ -495,6 +550,8 @@ QList<AudioBar *> VCAudioTriggers::getAudioBars()
 {
     QList <AudioBar *> list;
     list.append(m_volumeBar);
+    list.append(m_beatBar);
+    list.append(m_bpmBar);
     list.append(m_spectrumBars);
 
     return list;
@@ -529,6 +586,19 @@ void VCAudioTriggers::setSpectrumBarType(int index, int type)
         m_volumeBar->setType(type);
         return;
     }
+
+    if (index == beatBarIndex())
+    {
+        m_beatBar->setType(type);
+        return;
+    }
+
+    if (index == bpmBarIndex())
+    {
+        m_bpmBar->setType(type);
+        return;
+    }
+
     if (index >= 0 && index < m_spectrumBars.size())
     {
         m_spectrumBars[index]->setType(type);
@@ -539,7 +609,9 @@ void VCAudioTriggers::setSpectrumBarType(int index, int type)
 void VCAudioTriggers::editProperties()
 {
     // make a backup copy of the current bars
-    AudioBar *tmpVolume = m_volumeBar->createCopy();
+    AudioBar* tmpVolume = m_volumeBar->createCopy();
+    AudioBar* tmpBeat = m_beatBar->createCopy();
+    AudioBar* tmpBPM = m_bpmBar->createCopy();
     QList <AudioBar *> tmpSpectrumBars;
     foreach(AudioBar *bar, m_spectrumBars)
         tmpSpectrumBars.append(bar->createCopy());
@@ -553,6 +625,13 @@ void VCAudioTriggers::editProperties()
         // restore the previous bars backup
         delete m_volumeBar;
         m_volumeBar = tmpVolume;
+
+        delete m_beatBar;
+        m_beatBar = tmpBeat;
+
+        delete m_bpmBar;
+        m_bpmBar = tmpBPM;
+
         m_spectrumBars.clear();
         foreach(AudioBar *bar, tmpSpectrumBars)
             m_spectrumBars.append(bar);
@@ -570,8 +649,22 @@ void VCAudioTriggers::editProperties()
                 m_inputCapture->unregisterBandsNumber(barsNumber);
             m_inputCapture->registerBandsNumber(m_spectrumBars.count());
             if (captureIsNew)
+            {
                 connect(m_inputCapture, SIGNAL(dataProcessed(double*,int,double,quint32)),
                         this, SLOT(slotDisplaySpectrum(double*,int,double,quint32)));
+
+                // beat detection
+                {
+                    //m_inputCapture->SetIsFrequencyAnalysisActive(false);
+                    m_inputCapture->SetIsTimeFrameAnalysisActive(true);
+
+                    connect(m_inputCapture, SIGNAL(detectedBeat(const bool)),
+                            this, SLOT(slotDetectBeat(const bool)));
+
+                    connect(m_inputCapture, SIGNAL(detectedBPM(const quint32)),
+                            this, SLOT(slotDetectBPM(const quint32)));
+                }
+            }
         }
     }
 }
@@ -632,6 +725,14 @@ bool VCAudioTriggers::loadXML(QXmlStreamReader &root)
         {
             m_volumeBar->loadXML(root, m_doc);
         }
+        else if (root.name() == KXMLQLCBeatBar)
+        {
+            m_beatBar->loadXML(root, m_doc);
+        }
+        else if (root.name() == KXMLQLCBPMBar)
+        {
+            m_bpmBar->loadXML(root, m_doc);
+        }
         else if (root.name() == KXMLQLCSpectrumBar)
         {
             if (attrs.hasAttribute(KXMLQLCAudioBarIndex))
@@ -678,6 +779,10 @@ bool VCAudioTriggers::saveXML(QXmlStreamWriter *doc)
     bool hasAssignment = false;
     if (m_volumeBar->m_type != AudioBar::None)
         hasAssignment = true;
+    else if (m_beatBar->m_type != AudioBar::None)
+        hasAssignment = true;
+    else if (m_bpmBar->m_type != AudioBar::None)
+        hasAssignment = true;
     else
     {
         foreach(AudioBar *bar, m_spectrumBars)
@@ -701,6 +806,17 @@ bool VCAudioTriggers::saveXML(QXmlStreamWriter *doc)
     {
         m_volumeBar->saveXML(doc, KXMLQLCVolumeBar, volumeBarIndex());
     }
+
+    if (m_beatBar->m_type != AudioBar::None)
+    {
+        m_beatBar->saveXML(doc, KXMLQLCBeatBar, beatBarIndex());
+    }
+
+    if (m_bpmBar->m_type != AudioBar::None)
+    {
+        m_bpmBar->saveXML(doc, KXMLQLCBPMBar, beatBarIndex());
+    }
+
     int idx = 0;
     foreach (AudioBar *bar, m_spectrumBars)
     {

@@ -38,6 +38,10 @@ LIBS        += -L../../hotplugmonitor/src -lhotplugmonitor
 
 LIBS        += -L../audio/src -lqlcplusaudio
 
+# beat detection
+LIBS        += -L../audio/plugins/samplerate -lsamplerate
+LIBS        += -L../audio/plugins/kissfft -lkissfft
+
 #############################################################################
 # Sources
 #############################################################################

@@ -26,6 +26,8 @@
 #include <QVector>
 #include <QMutex>
 #include <QMap>
+#include <QSharedPointer>
+//#include "BTrack.h"
 
 #define SETTINGS_AUDIO_INPUT_DEVICE   "audio/input"
 #define SETTINGS_AUDIO_INPUT_SRATE    "audio/samplerate"
@@ -48,6 +50,8 @@ struct BandsData
     int m_registerCounter;
     QVector<double> m_fftMagnitudeBuffer;
 };
+
+class BTrack;
 
 class AudioCapture : public QThread
 {
@@ -121,11 +125,11 @@ protected:
 
 private:
     bool m_IsFrequencyAnalysisActive;
-    bool m_IsTimeFrameAnalysisActive;
+    bool m_IsBeatAnalysisActive;
 
 public:
     void SetIsFrequencyAnalysisActive(const bool val_p) { m_IsFrequencyAnalysisActive = val_p; }
-    void SetIsTimeFrameAnalysisActive(const bool val_p) { m_IsTimeFrameAnalysisActive = val_p; }
+    void SetIsTimeFrameAnalysisActive(const bool val_p) { m_IsBeatAnalysisActive = val_p; }
 
 private:
     /** This is called at every processData to fill a single BandsData structure */
@@ -137,13 +141,13 @@ private:
      *  3) retrieve the signal magnitude for each registered number of bands
      */
     void processData();
-    void prepareTimeFrameData();
-
+    void detectBeat(QSharedPointer<BTrack> bTrack_p);
     bool m_userStop, m_pause;
 
 signals:
     void dataProcessed(double *spectrumBands, int size, double maxMagnitude, quint32 power);
-    void preparedTimeFrameData(const std::vector<double>& timeFrameData_p);
+    void detectedBeat(const bool isBeat_p);
+    void detectedBPM(const quint32 bpm_p);
 
 protected:
     /*!
@@ -164,14 +168,20 @@ protected:
     quint32 m_signalPower;
 
     /** **************** FFT variables ********************** */
-    double *m_fftInputBuffer;
+    std::vector<double> m_fftInputBuffer;
     void *m_fftOutputBuffer;
 
     /** Map of the registered clients (key is the number of bands) */
     QMap <int, BandsData> m_fftMagnitudeMap;
 
     /** **************** time frame analysis ********************** */
-    std::vector<double> m_audioBufferF64;
+    std::vector<double>    m_AudioBufferF64;
+    std::vector<double>    m_PrevAudioBufferF64;
+
+    unsigned int           m_FrameSize;
+    unsigned int           m_HopSize;
+    QSharedPointer<BTrack> m_BTrack;
+    //BTrack                 m_BTrack;
 
 public:
     unsigned int GetBufferSize() const { return m_bufferSize; }

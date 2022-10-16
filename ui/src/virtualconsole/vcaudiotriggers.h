@@ -44,6 +44,8 @@ class AudioBar;
 
 #define KXMLQLCVCAudioTriggers "AudioTriggers"
 
+class BTrack;
+
 class VCAudioTriggers : public VCWidget, public DMXSource
 {
     Q_OBJECT
@@ -84,6 +86,9 @@ signals:
 
 protected slots:
     void slotDisplaySpectrum(double *spectrumBands, int size, double maxMagnitude, quint32 power);
+    void slotDetectBeat(const bool isBeat_p);
+    void slotDisplayBPM(const quint32 isBeat_p);
+
 #if QT_VERSION >= 0x050000
     void slotVolumeChanged(int volume);
 #endif
@@ -99,6 +104,8 @@ protected:
     AudioCapture *m_inputCapture;
 
     AudioBar *m_volumeBar;
+    AudioBar *m_beatBar;
+    AudioBar *m_bpmBar;
     QList <AudioBar *> m_spectrumBars;
 
     /*********************************************************************
@@ -173,6 +180,8 @@ public:
 public:
 
     static int volumeBarIndex() { return 1000; }
+    static int beatBarIndex() { return 2000; }
+    static int bpmBarIndex() { return 3000; }
 
     /** Get a pointer to a single AudioBar by index.
      */

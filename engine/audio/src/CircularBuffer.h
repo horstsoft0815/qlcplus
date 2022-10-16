@@ -41,17 +41,28 @@ public:
     }
     
     /** Access the ith element in the buffer */
-    double &operator[] (int i)
+    double& operator[] (int i)
     {
         int index = (i + writeIndex) % buffer.size();
         return buffer[index];
     }
     
+    const double& operator[] (int i) const
+    {
+        int index = (i + writeIndex) % buffer.size();
+        return buffer[index];
+    }
+
     /** Add a new sample to the end of the buffer */
     void addSampleToEnd (double v)
     {
         buffer[writeIndex] = v;
         writeIndex = (writeIndex + 1) % buffer.size();
+
+        if(currentSize < buffer.size())
+        {
+            ++currentSize;
+        }
     }
     
     /** Resize the buffer */
@@ -59,12 +70,32 @@ public:
     {
         buffer.resize (size);
         writeIndex = 0;
+        currentSize = size>0 ? 1 : 0;
     }
-    
+
+    std::size_t getSize() const { return buffer.size(); }
+    std::size_t getCurrentSize() const { return currentSize; }
+    int getWriteIndex() const { return writeIndex; }
+
+    const std::vector<double>& getBuffer() const { return buffer; }
 private:
     
     std::vector<double> buffer;
+    std::size_t currentSize;
     int writeIndex;
 };
+
+namespace CircularBufferUtils
+{
+struct LinearFit
+{
+    double slope = 0.;
+    double intercept = 0.;
+};
+
+std::vector<double> GetDifferenceVec(const CircularBuffer& buffer_p);
+LinearFit GetLinearFit(const double timeStep_p, const CircularBuffer& buffer_p);
+}
+
 
 #endif /* CircularBuffer_hpp */

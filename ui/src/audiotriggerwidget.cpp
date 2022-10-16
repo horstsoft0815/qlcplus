@@ -28,6 +28,8 @@ AudioTriggerWidget::AudioTriggerWidget(QWidget *parent) :
     QWidget(parent)
   , m_spectrumBands(NULL)
   , m_volumeBarHeight(0)
+  , m_beatBarHeight(0)
+  , m_bpmBarHeight(0)
   , m_barsNumber(0)
   , m_maxFrequency(0)
 {
@@ -42,7 +44,9 @@ void AudioTriggerWidget::setBarsNumber(int num)
     for (int i = 0; i < m_barsNumber; i++)
         m_spectrumBands[i] = 0;
     m_volumeBarHeight = 0;
-    m_barWidth = (width() - 10) / (m_barsNumber + 1);
+    m_beatBarHeight = 0;
+    m_bpmBarHeight = 0;
+    m_barWidth = (width() - 10) / (m_barsNumber + 1 /*+ 1*/);
     update();
 }
 
@@ -61,6 +65,16 @@ uchar AudioTriggerWidget::getUcharVolume()
     return SCALE(float(m_volumeBarHeight), 0.0, float(m_spectrumHeight), 0.0, 255.0);
 }
 
+uchar AudioTriggerWidget::getUcharBeat()
+{
+    return SCALE(float(m_beatBarHeight), 0.0, float(m_spectrumHeight), 0.0, 255.0);
+}
+
+uchar AudioTriggerWidget::getUcharBPM()
+{
+    return SCALE(float(m_bpmBarHeight), 0.0, float(m_spectrumHeight), 0.0, 255.0);
+}
+
 uchar AudioTriggerWidget::getUcharBand(int idx)
 {
     if (idx >= 0 && idx < m_barsNumber)
@@ -71,7 +85,7 @@ uchar AudioTriggerWidget::getUcharBand(int idx)
 
 void AudioTriggerWidget::displaySpectrum(double *spectrumData, double maxMagnitude, quint32 power)
 {
-    m_volumeBarHeight = (power * m_spectrumHeight) / 0x7FFF;
+    m_volumeBarHeight = (power * m_spectrumHeight) / 0x7FFF; // 32767
     for (int i = 0; i < m_barsNumber; i++)
         m_spectrumBands[i] =  (m_volumeBarHeight * spectrumData[i]) / maxMagnitude;
 
@@ -79,20 +93,39 @@ void AudioTriggerWidget::displaySpectrum(double *spectrumData, double maxMagnitu
     update();
 }
 
+void AudioTriggerWidget::displayBeat(const bool isBeat_p)
+{
+    m_beatBarHeight = isBeat_p ? m_spectrumHeight : 0;
+
+    update();
+}
+
+void AudioTriggerWidget::displayBPM(const quint32 bpm_p)
+{
+    m_bpmBarHeight = (bpm_p * m_spectrumHeight) / 0x7FFF; // 32767
+
+    update();
+}
+
 void AudioTriggerWidget::resizeEvent(QResizeEvent *e)
 {
     QWidget::resizeEvent(e);
-    m_barWidth = (width() - 10) / (m_barsNumber + 1);
+    m_barWidth = (width() - 10) / (m_barsNumber + 1 /*+ 1*/);
 }
 
 void AudioTriggerWidget::paintEvent(QPaintEvent *e)
 {
     QWidget::paintEvent(e);
 
+    //qDebug() << "Paint spectrum -- bars number:" << m_barsNumber;
+    //qDebug() << "Paint spectrum -- bar width:" << m_barWidth;
+
     if (m_barsNumber == 0)
         return;
 
     m_spectrumHeight = height() - 20;
+
+    //qDebug() << "Paint spectrum -- m_spectrumHeight:" << m_spectrumHeight;
 
     QPainter painter(this);
 
@@ -105,6 +138,14 @@ void AudioTriggerWidget::paintEvent(QPaintEvent *e)
     painter.drawRect(0, 0, m_barWidth * m_barsNumber, m_spectrumHeight);
 
     // fill volume bar background
+    painter.setBrush(QBrush(Qt::lightGray));
+    painter.drawRect(width() - 3* m_barWidth, 0, m_barWidth, m_spectrumHeight);
+
+    // fill beat bar background
+    painter.setBrush(QBrush(Qt::lightGray));
+    painter.drawRect(width() - 2*m_barWidth, 0, m_barWidth, m_spectrumHeight);
+
+    // fill bpm bar background
     painter.setBrush(QBrush(Qt::lightGray));
     painter.drawRect(width() - m_barWidth, 0, m_barWidth, m_spectrumHeight);
 
@@ -143,5 +184,16 @@ void AudioTriggerWidget::paintEvent(QPaintEvent *e)
 
     painter.setPen(QPen(Qt::NoPen));
     painter.setBrush(QBrush(Qt::green));
-    painter.drawRect(width() - m_barWidth + 1, m_spectrumHeight - m_volumeBarHeight, m_barWidth - 2, m_volumeBarHeight);
+
+    //qDebug() << "Paint spectrum -- volume bar height:" << m_volumeBarHeight;
+    painter.drawRect(width() - 3* m_barWidth + 1, m_spectrumHeight - m_volumeBarHeight, m_barWidth - 2, m_volumeBarHeight);
+
+
+    painter.setBrush(QBrush(Qt::red));
+    //qDebug() << "Paint spectrum -- beat bar height:" << m_beatBarHeight;
+    painter.drawRect(width() - 2*m_barWidth + 1, m_spectrumHeight - m_beatBarHeight, m_barWidth - 2, m_beatBarHeight);
+
+    painter.setBrush(QBrush(Qt::blue));
+    //qDebug() << "Paint spectrum -- beat bar height:" << m_beatBarHeight;
+    painter.drawRect(width() - m_barWidth + 1, m_spectrumHeight - m_beatBarHeight, m_barWidth - 2, m_beatBarHeight);
 }

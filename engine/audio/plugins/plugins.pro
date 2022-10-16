@@ -10,3 +10,6 @@ system(pkg-config --exists sndfile) {
   SUBDIRS += sndfile
 }
 }
+
+SUBDIRS              += samplerate \
+    kissfft

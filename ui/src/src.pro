@@ -26,11 +26,9 @@ INCLUDEPATH += ../../plugins/interfaces
 INCLUDEPATH     += ../../webaccess
 
 # Beat tracking
-INCLUDEPATH += ../../plugins/btrack/src
-DEPENDPATH  += ../../plugins/btrack
 #LIBS        += ../../plugins/btrack/libbtrack.so
-QMAKE_LIBDIR    += ../../plugins/btrack
-LIBS        += -lbtrack
+QMAKE_LIBDIR+= ../../engine/audio/plugins/samplerate
+LIBS        += -lsamplerate
 
 # Resources
 RESOURCES    += qlcui.qrc
@@ -44,12 +42,8 @@ lessThan(QT_MAJOR_VERSION, 5) {
   }
 }
 
-HEADERS += ../../plugins/interfaces/rdmprotocol.h \
-    virtualconsole/vcbeattriggers.h \
-    virtualconsole/vcbeattriggersproperties.h
-SOURCES += ../../plugins/interfaces/rdmprotocol.cpp \
-    virtualconsole/vcbeattriggers.cpp \
-    virtualconsole/vcbeattriggersproperties.cpp
+HEADERS += ../../plugins/interfaces/rdmprotocol.h
+SOURCES += ../../plugins/interfaces/rdmprotocol.cpp
 
 # Headers
 HEADERS += aboutbox.h \

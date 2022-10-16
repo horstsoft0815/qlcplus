@@ -13,6 +13,7 @@ DEPENDPATH  += ../../src
 
 QMAKE_LIBDIR += ../../src
 QMAKE_LIBDIR += ../../../engine/src
+#QMAKE_LIBDIR += ../../../engine/audio/plugins/btrack
 LIBS         += -lqlcplusui -lqlcplusengine
 
 # Test sources

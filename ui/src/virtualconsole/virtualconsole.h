@@ -169,7 +169,7 @@ protected:
     QAction* m_addSoloFrameAction;
     QAction* m_addLabelAction;
     QAction* m_addAudioTriggersAction;
-    QAction* m_addBeatTriggersAction;
+    //QAction* m_addBeatTriggersAction;
     QAction* m_addClockAction;
     QAction* m_addAnimationAction;
 
@@ -242,7 +242,7 @@ public slots:
     void slotAddSoloFrame();
     void slotAddLabel();
     void slotAddAudioTriggers();
-    void slotAddBeatTriggers();
+    //void slotAddBeatTriggers();
     void slotAddClock();
     void slotAddAnimation();
 

@@ -22,87 +22,100 @@
 #include <math.h>
 #include "OnsetDetectionFunction.h"
 
+#define CLEAR_FFT_NOISE
+
 //=======================================================================
-OnsetDetectionFunction::OnsetDetectionFunction (int hopSize_,int frameSize_)
- :  onsetDetectionFunctionType (ComplexSpectralDifferenceHWR), windowType (HanningWindow)
+OnsetDetectionFunction::OnsetDetectionFunction (
+        int hopSize_p,
+        int frameSize_p)
+ :  m_OnsetDetectionFunctionType (eComplexSpectralDifferenceHWR),
+   m_WindowType (eHanningWindow)
 {
     // indicate that we have not initialised yet
-	initialised = false;
+    m_Initialised = false;
 	
 	// set pi
-	pi = 3.14159265358979;
+    m_Pi = 3.14159265358979;
 	
 	// initialise with arguments to constructor
-	initialise (hopSize_, frameSize_, ComplexSpectralDifferenceHWR, HanningWindow);
+    initialise (hopSize_p, frameSize_p, eComplexSpectralDifferenceHWR, eHanningWindow);
 }
 
 //=======================================================================
-OnsetDetectionFunction::OnsetDetectionFunction(int hopSize_,int frameSize_,int onsetDetectionFunctionType_,int windowType_)
- :  onsetDetectionFunctionType (ComplexSpectralDifferenceHWR), windowType (HanningWindow)
+OnsetDetectionFunction::OnsetDetectionFunction(
+        int hopSize_p,
+        int frameSize_p,
+        int onsetDetectionFunctionType_p,
+        int windowType_p)
+ :  m_OnsetDetectionFunctionType (eComplexSpectralDifferenceHWR), m_WindowType (eHanningWindow)
 {	
 	// indicate that we have not initialised yet
-	initialised = false;
+    m_Initialised = false;
 	
 	// set pi
-	pi = 3.14159265358979;	
+    m_Pi = 3.14159265358979;
 	
 	// initialise with arguments to constructor
-	initialise (hopSize_, frameSize_, onsetDetectionFunctionType_, windowType_);
+    initialise (hopSize_p, frameSize_p, onsetDetectionFunctionType_p, windowType_p);
 }
 
 
 //=======================================================================
 OnsetDetectionFunction::~OnsetDetectionFunction()
 {
-    if (initialised)
+    if (m_Initialised)
     {
-        freeFFT();
+        //freeFFT();
     }
 }
 
 //=======================================================================
-void OnsetDetectionFunction::initialise (int hopSize_, int frameSize_)
+void OnsetDetectionFunction::initialise (int hopSize_p, int frameSize_p)
 {
     // use the already initialised onset detection function and window type and
     // pass the new frame and hop size to the main initialisation function
-    initialise (hopSize_, frameSize_, onsetDetectionFunctionType, windowType);
+    initialise (hopSize_p, frameSize_p, m_OnsetDetectionFunctionType, m_WindowType);
 }
 
 //=======================================================================
-void OnsetDetectionFunction::initialise(int hopSize_,int frameSize_,int onsetDetectionFunctionType_,int windowType_)
+void OnsetDetectionFunction::initialise(
+        int hopSize_p,
+        int frameSize_p,
+        int onsetDetectionFunctionType_p,
+        int windowType_p)
 {
-	hopSize = hopSize_; // set hopsize
-	frameSize = frameSize_; // set framesize
+    m_HopSize = hopSize_p; // set hopsize
+    m_FrameSize = frameSize_p; // set framesize
 	
-	onsetDetectionFunctionType = onsetDetectionFunctionType_; // set detection function type
-    windowType = windowType_; // set window type
+    m_OnsetDetectionFunctionType = onsetDetectionFunctionType_p; // set detection function type
+    m_WindowType = windowType_p; // set window type
 		
 	// initialise buffers
-    frame.resize (frameSize);
-    window.resize (frameSize);
-    magSpec.resize (frameSize);
-    prevMagSpec.resize (frameSize);
-    phase.resize (frameSize);
-    prevPhase.resize (frameSize);
-    prevPhase2.resize (frameSize);
+    m_Frame.resize (m_FrameSize);
+    m_Window.resize (m_FrameSize);
+    m_MagSpec.resize (m_FrameSize);
+    m_PrevMagSpec.resize (m_FrameSize);
+    m_Phase.resize (m_FrameSize);
+    m_PrevPhase.resize (m_FrameSize);
+    m_PrevPhase2.resize (m_FrameSize);
 	
 	
 	// set the window to the specified type
-	switch (windowType)
+    switch (m_WindowType)
     {
-		case RectangularWindow:
+        case eRectangularWindow:
 			calculateRectangularWindow();		// Rectangular window
 			break;	
-		case HanningWindow:
+        case eHanningWindow:
 			calculateHanningWindow();			// Hanning Window
 			break;
-		case HammingWindow:
+        case eHammingWindow:
 			calclulateHammingWindow();			// Hamming Window
 			break;
-		case BlackmanWindow:
+        case eBlackmanWindow:
 			calculateBlackmanWindow();			// Blackman Window
 			break;
-		case TukeyWindow:
+        case eTukeyWindow:
 			calculateTukeyWindow();             // Tukey Window
 			break;
 		default:
@@ -110,15 +123,15 @@ void OnsetDetectionFunction::initialise(int hopSize_,int frameSize_,int onsetDet
 	}
 	
 	// initialise previous magnitude spectrum to zero
-	for (int i = 0; i < frameSize; i++)
+    for (int i = 0; i < m_FrameSize; i++)
 	{
-		prevMagSpec[i] = 0.0;
-		prevPhase[i] = 0.0;
-		prevPhase2[i] = 0.0;
-		frame[i] = 0.0;
+        m_PrevMagSpec[i] = 0.0;
+        m_PrevPhase[i] = 0.0;
+        m_PrevPhase2[i] = 0.0;
+        m_Frame[i] = 0.0;
 	}
 	
-	prevEnergySum = 0.0;	// initialise previous energy sum value to zero
+    m_PrevEnergySum = 0.0;	// initialise previous energy sum value to zero
 	
     initialiseFFT();
 }
@@ -126,131 +139,128 @@ void OnsetDetectionFunction::initialise(int hopSize_,int frameSize_,int onsetDet
 //=======================================================================
 void OnsetDetectionFunction::initialiseFFT()
 {
-    if (initialised) // if we have already initialised FFT plan
+    if (m_Initialised) // if we have already initialised FFT plan
     {
         freeFFT();
     }
     
 #ifdef USE_FFTW
-    complexIn = (fftw_complex*) fftw_malloc (sizeof(fftw_complex) * frameSize);		// complex array to hold fft data
-    complexOut = (fftw_complex*) fftw_malloc (sizeof(fftw_complex) * frameSize);	// complex array to hold fft data
-    p = fftw_plan_dft_1d (frameSize, complexIn, complexOut, FFTW_FORWARD, FFTW_ESTIMATE);	// FFT plan initialisation
+    m_ComplexIn = (fftw_complex*) fftw_malloc (sizeof(fftw_complex) * m_FrameSize);		// complex array to hold fft data
+    m_ComplexOut = (fftw_complex*) fftw_malloc (sizeof(fftw_complex) * m_FrameSize);	// complex array to hold fft data
+    //m_Plan = fftw_plan_dft_1d (m_FrameSize, m_ComplexIn, m_ComplexOut, FFTW_FORWARD, FFTW_ESTIMATE);	// FFT plan initialisation
 #endif
     
 #ifdef USE_KISS_FFT
-    complexOut.resize (frameSize);
+    m_ComplexOut.resize (m_FrameSize);
     
-    for (int i = 0; i < frameSize;i++)
-    {
-        complexOut[i].resize(2);
-    }
-    
-    fftIn = new kiss_fft_cpx[frameSize];
-    fftOut = new kiss_fft_cpx[frameSize];
-    cfg = kiss_fft_alloc (frameSize, 0, 0, 0);
+
+    m_FFTIn = new kiss_fft_cpx[m_FrameSize];
+    m_FFTOut = new kiss_fft_cpx[m_FrameSize];
+    m_Cfg = kiss_fft_alloc (m_FrameSize, 0, 0, 0);
 #endif
 
-    initialised = true;
+    m_Initialised = true;
 }
 
 //=======================================================================
 void OnsetDetectionFunction::freeFFT()
 {
 #ifdef USE_FFTW
-    fftw_destroy_plan (p);
-    fftw_free (complexIn);
-    fftw_free (complexOut);
+    //fftw_destroy_plan (m_Plan);
+    fftw_free (m_ComplexIn);
+    fftw_free (m_ComplexOut);
 #endif
     
 #ifdef USE_KISS_FFT
-    free (cfg);
-    delete [] fftIn;
-    delete [] fftOut;
+    free (m_Cfg);
+    delete [] m_FFTIn;
+    delete [] m_FFTOut;
 #endif
 }
 
 //=======================================================================
-void OnsetDetectionFunction::setOnsetDetectionFunctionType (int onsetDetectionFunctionType_)
+void OnsetDetectionFunction::setOnsetDetectionFunctionType (
+        int onsetDetectionFunctionType_p)
 {
-	onsetDetectionFunctionType = onsetDetectionFunctionType_; // set detection function type
+    m_OnsetDetectionFunctionType = onsetDetectionFunctionType_p; // set detection function type
 }
 
 //=======================================================================
-double OnsetDetectionFunction::calculateOnsetDetectionFunctionSample (double* buffer)
+double OnsetDetectionFunction::calculateOnsetDetectionFunctionSample (double* buffer_p)
 {	
 	double odfSample;
 		
 	// shift audio samples back in frame by hop size
-	for (int i = 0; i < (frameSize-hopSize);i++)
+    for (int i = 0; i < (m_FrameSize-m_HopSize);i++)
 	{
-		frame[i] = frame[i+hopSize];
+        m_Frame[i] = m_Frame[i+m_HopSize];
 	}
 	
 	// add new samples to frame from input buffer
 	int j = 0;
-	for (int i = (frameSize-hopSize);i < frameSize;i++)
+    for (int i = (m_FrameSize-m_HopSize);i < m_FrameSize;i++)
 	{
-		frame[i] = buffer[j];
+        m_Frame[i] = buffer_p[j];
 		j++;
 	}
 		
-	switch (onsetDetectionFunctionType)
+    switch (m_OnsetDetectionFunctionType)
     {
-		case EnergyEnvelope:
+        case eEnergyEnvelope:
         {
             // calculate energy envelope detection function sample
 			odfSample = energyEnvelope();
 			break;
         }
-		case EnergyDifference:
+        case eEnergyDifference:
         {
             // calculate half-wave rectified energy difference detection function sample
 			odfSample = energyDifference();
 			break;
         }
-		case SpectralDifference:
+        case eSpectralDifference:
         {
             // calculate spectral difference detection function sample
 			odfSample = spectralDifference();
 			break;
         }
-		case SpectralDifferenceHWR:
+        case eSpectralDifferenceHWR:
         {
             // calculate spectral difference detection function sample (half wave rectified)
 			odfSample = spectralDifferenceHWR();
 			break;
         }
-		case PhaseDeviation:
+        case ePhaseDeviation:
         {
             // calculate phase deviation detection function sample (half wave rectified)
 			odfSample = phaseDeviation();
 			break;
         }
-		case ComplexSpectralDifference:
+        case eComplexSpectralDifference:
         {
             // calcualte complex spectral difference detection function sample
 			odfSample = complexSpectralDifference();
 			break;
         }
-		case ComplexSpectralDifferenceHWR:
+        case eComplexSpectralDifferenceHWR:
         {
             // calcualte complex spectral difference detection function sample (half-wave rectified)
 			odfSample = complexSpectralDifferenceHWR();
 			break;
         }
-		case HighFrequencyContent:
+        case eHighFrequencyContent:
         {
             // calculate high frequency content detection function sample
 			odfSample = highFrequencyContent();
 			break;
         }
-		case HighFrequencySpectralDifference:
+        case eHighFrequencySpectralDifference:
         {
             // calculate high frequency spectral difference detection function sample
 			odfSample = highFrequencySpectralDifference();
 			break;
         }
-		case HighFrequencySpectralDifferenceHWR:
+        case eHighFrequencySpectralDifferenceHWR:
         {
             // calculate high frequency spectral difference detection function (half-wave rectified)
 			odfSample = highFrequencySpectralDifferenceHWR();
@@ -262,46 +272,69 @@ double OnsetDetectionFunction::calculateOnsetDetectionFunctionSample (double* bu
         }
 	}
 		
-	return odfSample;
+    return odfSample;
 }
 
 
 //=======================================================================
 void OnsetDetectionFunction::performFFT()
 {
-    int fsize2 = (frameSize/2);
+    int fsize2 = (m_FrameSize/2);
     
 #ifdef USE_FFTW
 	// window frame and copy to complex array, swapping the first and second half of the signal
 	for (int i = 0;i < fsize2;i++)
 	{
-		complexIn[i][0] = frame[i + fsize2] * window[i + fsize2];
-		complexIn[i][1] = 0.0;
-		complexIn[i+fsize2][0] = frame[i] * window[i];
-		complexIn[i+fsize2][1] = 0.0;
+        m_ComplexIn[i][0] = m_Frame[i + fsize2] * m_Window[i + fsize2];
+        m_ComplexIn[i][1] = 0.0;
+        m_ComplexIn[i+fsize2][0] = m_Frame[i] * m_Window[i];
+        m_ComplexIn[i+fsize2][1] = 0.0;
 	}
 	
 	// perform the fft
-	fftw_execute (p);
+    fftw_plan m_Plan = fftw_plan_dft_1d (m_FrameSize, m_ComplexIn, m_ComplexOut, FFTW_FORWARD, FFTW_ESTIMATE);	// FFT plan initialisation
+    fftw_execute (m_Plan);
+    fftw_destroy_plan (m_Plan);
 #endif
     
 #ifdef USE_KISS_FFT
     for (int i = 0; i < fsize2; i++)
     {
-        fftIn[i].r = frame[i + fsize2] * window[i + fsize2];
-        fftIn[i].i = 0.0;
-        fftIn[i + fsize2].r = frame[i] * window[i];
-        fftIn[i + fsize2].i = 0.0;
+        m_FFTIn[i].r = m_Frame[i + fsize2] * m_Window[i + fsize2];
+        m_FFTIn[i].i = 0.0;
+        m_FFTIn[i + fsize2].r = m_Frame[i] * m_Window[i];
+        m_FFTIn[i + fsize2].i = 0.0;
     }
     
     // execute kiss fft
-    kiss_fft (cfg, fftIn, fftOut);
+    kiss_fft (m_Cfg, m_FFTIn, m_FFTOut);
     
     // store real and imaginary parts of FFT
-    for (int i = 0; i < frameSize; i++)
+    for (int i = 0; i < m_FrameSize; i++)
     {
-        complexOut[i][0] = fftOut[i].r;
-        complexOut[i][1] = fftOut[i].i;
+        m_ComplexOut[i][0] = m_FFTOut[i].r;
+        m_ComplexOut[i][1] = m_FFTOut[i].i;
+    }
+#endif
+
+#ifdef CLEAR_FFT_NOISE
+    //We delete some values since these will ruin our output
+    for (size_t n = 0; n < 5 && n < m_ComplexOut.size(); n++)
+    {
+        m_ComplexOut[n][0] = 0;
+        m_ComplexOut[n][1] = 0;
+    }
+
+    // consider only data < 5000Hz
+    double SPECTRUM_MAX_FREQUENCY = 2500;
+    double sampleRate = 44100;
+    int number_of_bands = 1;
+    size_t subBandWidth = static_cast<size_t>(((m_ComplexOut.size() * SPECTRUM_MAX_FREQUENCY) / sampleRate) / number_of_bands);
+
+    for (size_t n = subBandWidth; n < m_ComplexOut.size(); n++)
+    {
+        m_ComplexOut[n][0] = 0;
+        m_ComplexOut[n][1] = 0;
     }
 #endif
 }
@@ -318,9 +351,9 @@ double OnsetDetectionFunction::energyEnvelope()
 	sum = 0;	// initialise sum
 	
 	// sum the squares of the samples
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{
-		sum = sum + (frame[i] * frame[i]);
+        sum = sum + (m_Frame[i] * m_Frame[i]);
 	}
 	
 	return sum;		// return sum
@@ -335,14 +368,14 @@ double OnsetDetectionFunction::energyDifference()
 	sum = 0;	// initialise sum
 	
 	// sum the squares of the samples
-	for (int i = 0; i < frameSize; i++)
+    for (int i = 0; i < m_FrameSize; i++)
 	{
-		sum = sum + (frame[i] * frame[i]);
+        sum = sum + (m_Frame[i] * m_Frame[i]);
 	}
 	
-	sample = sum - prevEnergySum;	// sample is first order difference in energy
+    sample = sum - m_PrevEnergySum;	// sample is first order difference in energy
 	
-	prevEnergySum = sum;	// store energy value for next calculation
+    m_PrevEnergySum = sum;	// store energy value for next calculation
 	
 	if (sample > 0)
 	{
@@ -364,23 +397,24 @@ double OnsetDetectionFunction::spectralDifference()
 	performFFT();
 	
 	// compute first (N/2)+1 mag values
-	for (int i = 0;i < (frameSize/2)+1;i++)
+    for (int i = 0;i < (m_FrameSize/2)+1;i++)
 	{
-		magSpec[i] = sqrt (pow (complexOut[i][0], 2) + pow (complexOut[i][1], 2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0], 2) + pow (m_ComplexOut[i][1], 2));
 	}
 	// mag spec symmetric above (N/2)+1 so copy previous values
-	for (int i = (frameSize/2)+1; i < frameSize; i++)
+    for (int i = (m_FrameSize/2)+1; i < m_FrameSize; i++)
 	{
-		magSpec[i] = magSpec[frameSize-i];
+        m_MagSpec[i] = m_MagSpec[m_FrameSize-i];
 	}
 	
 	sum = 0;	// initialise sum to zero
-
-	for (int i = 0; i < frameSize; i++)
+    m_MagSpecSum = 0;
+    for (int i = 0; i < m_FrameSize; i++)
 	{
 		// calculate difference
-		diff = magSpec[i] - prevMagSpec[i];
-		
+        diff = m_MagSpec[i] - m_PrevMagSpec[i];
+        m_MagSpecSum += m_MagSpec[i];
+
 		// ensure all difference values are positive
 		if (diff < 0)
 		{
@@ -391,7 +425,7 @@ double OnsetDetectionFunction::spectralDifference()
 		sum = sum + diff;
 		
 		// store magnitude spectrum bin for next detection function sample calculation
-		prevMagSpec[i] = magSpec[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -407,23 +441,24 @@ double OnsetDetectionFunction::spectralDifferenceHWR()
 	performFFT();
 	
 	// compute first (N/2)+1 mag values
-	for (int i = 0;i < (frameSize/2) + 1; i++)
+    for (int i = 0;i < (m_FrameSize/2) + 1; i++)
 	{
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow (complexOut[i][1],2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow (m_ComplexOut[i][1],2));
 	}
 	// mag spec symmetric above (N/2)+1 so copy previous values
-	for (int i = (frameSize/2)+1;i < frameSize;i++)
+    for (int i = (m_FrameSize/2)+1;i < m_FrameSize;i++)
 	{
-		magSpec[i] = magSpec[frameSize-i];
+        m_MagSpec[i] = m_MagSpec[m_FrameSize-i];
 	}
 	
 	sum = 0;	// initialise sum to zero
-	
-	for (int i = 0;i < frameSize;i++)
+    m_MagSpecSum = 0;
+    for (int i = 0;i < m_FrameSize;i++)
 	{
 		// calculate difference
-		diff = magSpec[i] - prevMagSpec[i];
-		
+        diff = m_MagSpec[i] - m_PrevMagSpec[i];
+        m_MagSpecSum += m_MagSpec[i];
+
 		// only add up positive differences
 		if (diff > 0)
 		{
@@ -432,7 +467,7 @@ double OnsetDetectionFunction::spectralDifferenceHWR()
 		}
 		
 		// store magnitude spectrum bin for next detection function sample calculation
-		prevMagSpec[i] = magSpec[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -449,21 +484,21 @@ double OnsetDetectionFunction::phaseDeviation()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{
 		// calculate phase value
-		phase[i] = atan2 (complexOut[i][1], complexOut[i][0]);
+        m_Phase[i] = atan2 (m_ComplexOut[i][1], m_ComplexOut[i][0]);
 		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow (complexOut[i][1],2));
-		
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow (m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
 		
 		// if bin is not just a low energy bin then examine phase deviation
-		if (magSpec[i] > 0.1)
+        if (m_MagSpec[i] > 0.1)
 		{
-			dev = phase[i] - (2*prevPhase[i]) + prevPhase2[i];	// phase deviation
+            dev = m_Phase[i] - (2*m_PrevPhase[i]) + m_PrevPhase2[i];	// phase deviation
 			pdev = princarg (dev);	// wrap into [-pi,pi] range
 		
 			// make all values positive
@@ -477,8 +512,8 @@ double OnsetDetectionFunction::phaseDeviation()
 		}
 				
 		// store values for next calculation
-		prevPhase2[i] = prevPhase[i];
-		prevPhase[i] = phase[i];
+        m_PrevPhase2[i] = m_PrevPhase[i];
+        m_PrevPhase[i] = m_Phase[i];
 	}
 	
 	return sum;		
@@ -495,29 +530,30 @@ double OnsetDetectionFunction::complexSpectralDifference()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{
 		// calculate phase value
-		phase[i] = atan2 (complexOut[i][1], complexOut[i][0]);
+        m_Phase[i] = atan2 (m_ComplexOut[i][1], m_ComplexOut[i][0]);
 		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow(complexOut[i][1],2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow(m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
 		
 		// phase deviation
-		phaseDeviation = phase[i] - (2 * prevPhase[i]) + prevPhase2[i];
+        phaseDeviation = m_Phase[i] - (2 * m_PrevPhase[i]) + m_PrevPhase2[i];
 		
         // calculate complex spectral difference for the current spectral bin
-		csd = sqrt (pow (magSpec[i], 2) + pow (prevMagSpec[i], 2) - 2 * magSpec[i] * prevMagSpec[i] * cos (phaseDeviation));
+        csd = sqrt (pow (m_MagSpec[i], 2) + pow (m_PrevMagSpec[i], 2) - 2 * m_MagSpec[i] * m_PrevMagSpec[i] * cos (phaseDeviation));
 			
 		// add to sum
 		sum = sum + csd;
 		
 		// store values for next calculation
-		prevPhase2[i] = prevPhase[i];
-		prevPhase[i] = phase[i];
-		prevMagSpec[i] = magSpec[i];
+        m_PrevPhase2[i] = m_PrevPhase[i];
+        m_PrevPhase[i] = m_Phase[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -535,36 +571,37 @@ double OnsetDetectionFunction::complexSpectralDifferenceHWR()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{
 		// calculate phase value
-		phase[i] = atan2 (complexOut[i][1], complexOut[i][0]);
+        m_Phase[i] = atan2 (m_ComplexOut[i][1], m_ComplexOut[i][0]);
 		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow(complexOut[i][1],2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow(m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
 		
         // phase deviation
-        phaseDeviation = phase[i] - (2 * prevPhase[i]) + prevPhase2[i];
+        phaseDeviation = m_Phase[i] - (2 * m_PrevPhase[i]) + m_PrevPhase2[i];
         
         // calculate magnitude difference (real part of Euclidean distance between complex frames)
-        magnitudeDifference = magSpec[i] - prevMagSpec[i];
+        magnitudeDifference = m_MagSpec[i] - m_PrevMagSpec[i];
         
         // if we have a positive change in magnitude, then include in sum, otherwise ignore (half-wave rectification)
         if (magnitudeDifference > 0)
         {
             // calculate complex spectral difference for the current spectral bin
-            csd = sqrt (pow (magSpec[i], 2) + pow (prevMagSpec[i], 2) - 2 * magSpec[i] * prevMagSpec[i] * cos (phaseDeviation));
+            csd = sqrt (pow (m_MagSpec[i], 2) + pow (m_PrevMagSpec[i], 2) - 2 * m_MagSpec[i] * m_PrevMagSpec[i] * cos (phaseDeviation));
         
             // add to sum
             sum = sum + csd;
         }
         
 		// store values for next calculation
-		prevPhase2[i] = prevPhase[i];
-		prevPhase[i] = phase[i];
-		prevMagSpec[i] = magSpec[i];
+        m_PrevPhase2[i] = m_PrevPhase[i];
+        m_PrevPhase[i] = m_Phase[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -580,18 +617,18 @@ double OnsetDetectionFunction::highFrequencyContent()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0; i < frameSize; i++)
+    for (int i = 0; i < m_FrameSize; i++)
 	{		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow (complexOut[i][1],2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow (m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
 		
-		
-		sum = sum + (magSpec[i] * ((double) (i+1)));
+        sum = sum + (m_MagSpec[i] * ((double) (i+1)));
 		
 		// store values for next calculation
-		prevMagSpec[i] = magSpec[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -607,15 +644,16 @@ double OnsetDetectionFunction::highFrequencySpectralDifference()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow (complexOut[i][1],2));
-		
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow (m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
+
 		// calculate difference
-		mag_diff = magSpec[i] - prevMagSpec[i];
+        mag_diff = m_MagSpec[i] - m_PrevMagSpec[i];
 		
 		if (mag_diff < 0)
 		{
@@ -625,7 +663,7 @@ double OnsetDetectionFunction::highFrequencySpectralDifference()
 		sum = sum + (mag_diff * ((double) (i+1)));
 		
 		// store values for next calculation
-		prevMagSpec[i] = magSpec[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -641,15 +679,16 @@ double OnsetDetectionFunction::highFrequencySpectralDifferenceHWR()
 	performFFT();
 	
 	sum = 0; // initialise sum to zero
-	
+    m_MagSpecSum = 0;
 	// compute phase values from fft output and sum deviations
-	for (int i = 0;i < frameSize;i++)
+    for (int i = 0;i < m_FrameSize;i++)
 	{		
 		// calculate magnitude value
-		magSpec[i] = sqrt (pow (complexOut[i][0],2) + pow (complexOut[i][1],2));
+        m_MagSpec[i] = sqrt (pow (m_ComplexOut[i][0],2) + pow (m_ComplexOut[i][1],2));
+        m_MagSpecSum += m_MagSpec[i];
 		
 		// calculate difference
-		mag_diff = magSpec[i] - prevMagSpec[i];
+        mag_diff = m_MagSpec[i] - m_PrevMagSpec[i];
 		
 		if (mag_diff > 0)
 		{
@@ -657,7 +696,7 @@ double OnsetDetectionFunction::highFrequencySpectralDifferenceHWR()
 		}
 
 		// store values for next calculation
-		prevMagSpec[i] = magSpec[i];
+        m_PrevMagSpec[i] = m_MagSpec[i];
 	}
 	
 	return sum;		
@@ -673,12 +712,12 @@ void OnsetDetectionFunction::calculateHanningWindow()
 {
 	double N;		// variable to store framesize minus 1
 	
-	N = (double) (frameSize-1);	// framesize minus 1
+    N = (double) (m_FrameSize-1);	// framesize minus 1
 	
 	// Hanning window calculation
-	for (int n = 0; n < frameSize; n++)
+    for (int n = 0; n < m_FrameSize; n++)
 	{
-		window[n] = 0.5 * (1 - cos (2 * pi * (n / N)));
+        m_Window[n] = 0.5 * (1 - cos (2 * m_Pi * (n / N)));
 	}
 }
 
@@ -688,13 +727,13 @@ void OnsetDetectionFunction::calclulateHammingWindow()
 	double N;		// variable to store framesize minus 1
 	double n_val;	// double version of index 'n'
 	
-	N = (double) (frameSize-1);	// framesize minus 1
+    N = (double) (m_FrameSize-1);	// framesize minus 1
 	n_val = 0;
 	
 	// Hamming window calculation
-	for (int n = 0;n < frameSize;n++)
+    for (int n = 0;n < m_FrameSize;n++)
 	{
-		window[n] = 0.54 - (0.46 * cos (2 * pi * (n_val/N)));
+        m_Window[n] = 0.54 - (0.46 * cos (2 * m_Pi * (n_val/N)));
 		n_val = n_val+1;
 	}
 }
@@ -705,13 +744,13 @@ void OnsetDetectionFunction::calculateBlackmanWindow()
 	double N;		// variable to store framesize minus 1
 	double n_val;	// double version of index 'n'
 	
-	N = (double) (frameSize-1);	// framesize minus 1
+    N = (double) (m_FrameSize-1);	// framesize minus 1
 	n_val = 0;
 	
 	// Blackman window calculation
-	for (int n = 0;n < frameSize;n++)
+    for (int n = 0;n < m_FrameSize;n++)
 	{
-		window[n] = 0.42 - (0.5*cos(2*pi*(n_val/N))) + (0.08*cos(4*pi*(n_val/N)));
+        m_Window[n] = 0.42 - (0.5*cos(2*m_Pi*(n_val/N))) + (0.08*cos(4*m_Pi*(n_val/N)));
 		n_val = n_val+1;
 	}
 }
@@ -725,25 +764,25 @@ void OnsetDetectionFunction::calculateTukeyWindow()
 	
 	alpha = 0.5;
 	
-	N = (double) (frameSize-1);	// framesize minus 1
+    N = (double) (m_FrameSize-1);	// framesize minus 1
 		
 	// Tukey window calculation
 	
-	n_val = (double) (-1*((frameSize/2)))+1;
+    n_val = (double) (-1*((m_FrameSize/2)))+1;
 
-	for (int n = 0;n < frameSize;n++)	// left taper
+    for (int n = 0;n < m_FrameSize;n++)	// left taper
 	{
 		if ((n_val >= 0) && (n_val <= (alpha*(N/2))))
 		{
-			window[n] = 1.0;
+            m_Window[n] = 1.0;
 		}
 		else if ((n_val <= 0) && (n_val >= (-1*alpha*(N/2))))
 		{
-			window[n] = 1.0;
+            m_Window[n] = 1.0;
 		}
 		else
 		{
-			window[n] = 0.5*(1+cos(pi*(((2*n_val)/(alpha*N))-1)));
+            m_Window[n] = 0.5*(1+cos(m_Pi*(((2*n_val)/(alpha*N))-1)));
 		}
 
 		n_val = n_val+1;			 
@@ -755,9 +794,9 @@ void OnsetDetectionFunction::calculateTukeyWindow()
 void OnsetDetectionFunction::calculateRectangularWindow()
 {
 	// Rectangular window calculation
-	for (int n = 0;n < frameSize;n++)
+    for (int n = 0;n < m_FrameSize;n++)
 	{
-		window[n] = 1.0;
+        m_Window[n] = 1.0;
 	}
 }
 
@@ -769,15 +808,15 @@ void OnsetDetectionFunction::calculateRectangularWindow()
 double OnsetDetectionFunction::princarg(double phaseVal)
 {	
 	// if phase value is less than or equal to -pi then add 2*pi
-	while (phaseVal <= (-pi))
+    while (phaseVal <= (-m_Pi))
 	{
-		phaseVal = phaseVal + (2 * pi);
+        phaseVal = phaseVal + (2 * m_Pi);
 	}
 	
 	// if phase value is larger than pi, then subtract 2*pi
-	while (phaseVal > pi)
+    while (phaseVal > m_Pi)
 	{
-		phaseVal = phaseVal - (2 * pi);
+        phaseVal = phaseVal - (2 * m_Pi);
 	}
 			
 	return phaseVal;

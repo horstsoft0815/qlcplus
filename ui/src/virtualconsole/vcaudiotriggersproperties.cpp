@@ -225,6 +225,16 @@ void AudioTriggersConfiguration::updateTree()
     volItem->setText(KColumnName, tr("Volume Bar"));
     updateTreeItem(volItem, 1000);
 
+    // add beat item
+    QTreeWidgetItem *beatItem = new QTreeWidgetItem(m_tree);
+    beatItem->setText(KColumnName, tr("Beat Bar"));
+    updateTreeItem(beatItem, 2000);
+
+    // add bpm item
+    QTreeWidgetItem *bpmItem = new QTreeWidgetItem(m_tree);
+    bpmItem->setText(KColumnName, tr("BPM Bar"));
+    updateTreeItem(bpmItem, 3000);
+
     double freqIncr = (double)m_maxFrequency / m_barsNumSpin->value();
     double freqCount = 0.0;
 
@@ -246,8 +256,12 @@ void AudioTriggersConfiguration::slotTypeComboChanged(int comboIndex)
     QTreeWidgetItem *item = NULL;
     if (index == 1000)
         item = m_tree->topLevelItem(0);
+    else if (index == 2000)
+        item = m_tree->topLevelItem(1);
+    else if (index == 3000)
+        item = m_tree->topLevelItem(2);
     else
-        item = m_tree->topLevelItem(index + 1);
+        item = m_tree->topLevelItem(index + 3);
 
     m_triggers->setSpectrumBarType(index, comboIndex);
 
@@ -273,8 +287,12 @@ void AudioTriggersConfiguration::slotDmxSelectionClicked()
         QTreeWidgetItem *item = NULL;
         if (prop.toInt() == 1000)
             item = m_tree->topLevelItem(0);
+        else if (prop.toInt() == 2000)
+            item = m_tree->topLevelItem(1);
+        else if (prop.toInt() == 3000)
+            item = m_tree->topLevelItem(2);
         else
-            item = m_tree->topLevelItem(prop.toInt() + 1);
+            item = m_tree->topLevelItem(prop.toInt() + 3);
         updateTreeItem(item, prop.toInt());
     }
 }
@@ -297,8 +315,12 @@ void AudioTriggersConfiguration::slotFunctionSelectionClicked()
         QTreeWidgetItem *item = NULL;
         if (prop.toInt() == 1000)
             item = m_tree->topLevelItem(0);
+        else if (prop.toInt() == 2000)
+            item = m_tree->topLevelItem(1);
+        else if (prop.toInt() == 3000)
+            item = m_tree->topLevelItem(2);
         else
-            item = m_tree->topLevelItem(prop.toInt() + 1);
+            item = m_tree->topLevelItem(prop.toInt() + 3);
         updateTreeItem(item, prop.toInt());
     }
 }
@@ -326,8 +348,12 @@ void AudioTriggersConfiguration::slotWidgetSelectionClicked()
         QTreeWidgetItem *item = NULL;
         if (prop.toInt() == 1000)
             item = m_tree->topLevelItem(0);
+        else if (prop.toInt() == 2000)
+            item = m_tree->topLevelItem(1);
+        else if (prop.toInt() == 3000)
+            item = m_tree->topLevelItem(2);
         else
-            item = m_tree->topLevelItem(prop.toInt() + 1);
+            item = m_tree->topLevelItem(prop.toInt() + 3);
         updateTreeItem(item, prop.toInt());
     }
 }

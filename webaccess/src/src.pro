@@ -10,7 +10,7 @@ QT     += core gui script network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets multimedia
 
 INCLUDEPATH     += qhttpserver
-INCLUDEPATH     += ../../engine/src ../../engine/audio/src
+INCLUDEPATH     += ../../engine/src ../../engine/audio/src ../../engine/audio/plugins/btrack/src
 INCLUDEPATH     += ../../ui/src ../../ui/src/virtualconsole
 DEPENDPATH      += ../../engine/src ../../ui/src
 QMAKE_LIBDIR    += ../../engine/src ../../ui/src

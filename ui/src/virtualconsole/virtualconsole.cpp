@@ -44,7 +44,7 @@
 #include "addvcbuttonmatrix.h"
 #include "addvcslidermatrix.h"
 #include "vcaudiotriggers.h"
-#include "vcbeattriggers.h"
+//#include "vcbeattriggers.h"
 #include "virtualconsole.h"
 #include "dmxdumpfactory.h"
 #include "vcproperties.h"
@@ -98,7 +98,7 @@ VirtualConsole::VirtualConsole(QWidget* parent, Doc* doc)
     , m_addSoloFrameAction(NULL)
     , m_addLabelAction(NULL)
     , m_addAudioTriggersAction(NULL)
-    , m_addBeatTriggersAction(NULL)
+    //, m_addBeatTriggersAction(NULL)
     , m_addClockAction(NULL)
     , m_addAnimationAction(NULL)
 
@@ -339,8 +339,8 @@ void VirtualConsole::initActions()
     m_addAudioTriggersAction = new QAction(QIcon(":/audioinput.png"), tr("New Audio Triggers"), this);
     connect(m_addAudioTriggersAction, SIGNAL(triggered(bool)), this, SLOT(slotAddAudioTriggers()), Qt::QueuedConnection);
 
-    m_addBeatTriggersAction = new QAction(QIcon(":/audioinput.png"), tr("New Beat Triggers"), this);
-    connect(m_addBeatTriggersAction, SIGNAL(triggered(bool)), this, SLOT(slotAddBeatTriggers()), Qt::QueuedConnection);
+    //m_addBeatTriggersAction = new QAction(QIcon(":/audioinput.png"), tr("New Beat Triggers"), this);
+    //connect(m_addBeatTriggersAction, SIGNAL(triggered(bool)), this, SLOT(slotAddBeatTriggers()), Qt::QueuedConnection);
 
     m_addClockAction = new QAction(QIcon(":/clock.png"), tr("New Clock"), this);
     connect(m_addClockAction, SIGNAL(triggered(bool)), this, SLOT(slotAddClock()), Qt::QueuedConnection);
@@ -363,7 +363,7 @@ void VirtualConsole::initActions()
     m_addActionGroup->addAction(m_addSoloFrameAction);
     m_addActionGroup->addAction(m_addLabelAction);
     m_addActionGroup->addAction(m_addAudioTriggersAction);
-    m_addActionGroup->addAction(m_addBeatTriggersAction);
+    //m_addActionGroup->addAction(m_addBeatTriggersAction);
     m_addActionGroup->addAction(m_addClockAction);
     m_addActionGroup->addAction(m_addAnimationAction);
 
@@ -495,7 +495,7 @@ void VirtualConsole::initMenuBar()
     m_addMenu->addAction(m_addCueListAction);
     m_addMenu->addAction(m_addAnimationAction);
     m_addMenu->addAction(m_addAudioTriggersAction);
-    m_addMenu->addAction(m_addBeatTriggersAction);
+    //m_addMenu->addAction(m_addBeatTriggersAction);
     m_addMenu->addSeparator();
     m_addMenu->addAction(m_addFrameAction);
     m_addMenu->addAction(m_addSoloFrameAction);
@@ -574,7 +574,7 @@ void VirtualConsole::initMenuBar()
     m_toolbar->addAction(m_addSoloFrameAction);
     m_toolbar->addAction(m_addLabelAction);
     m_toolbar->addAction(m_addAudioTriggersAction);
-    m_toolbar->addAction(m_addBeatTriggersAction);
+    //m_toolbar->addAction(m_addBeatTriggersAction);
     m_toolbar->addAction(m_addClockAction);
     m_toolbar->addSeparator();
     m_toolbar->addAction(m_editCutAction);
@@ -979,16 +979,18 @@ void VirtualConsole::slotAddAudioTriggers()
     m_doc->setModified();
 }
 
+#if 0
 void VirtualConsole::slotAddBeatTriggers()
 {
-    VCWidget* parent(closestParent());
+    /*VCWidget* parent(closestParent());
     if (parent == NULL)
         return;
 
     VCBeatTriggers* triggers = new VCBeatTriggers(parent, m_doc);
     setupWidget(triggers, parent);
-    m_doc->setModified();
+    m_doc->setModified();*/
 }
+#endif
 
 void VirtualConsole::slotAddClock()
 {
@@ -1707,7 +1709,7 @@ void VirtualConsole::enableEdit()
     m_addSoloFrameAction->setShortcut(QKeySequence("CTRL+SHIFT+O"));
     m_addLabelAction->setShortcut(QKeySequence("CTRL+SHIFT+L"));
     m_addAudioTriggersAction->setShortcut(QKeySequence("CTRL+SHIFT+A"));
-    m_addBeatTriggersAction->setShortcut(QKeySequence("CTRL+SHIFT+A+B"));
+    //m_addBeatTriggersAction->setShortcut(QKeySequence("CTRL+SHIFT+A+B"));
     m_addClockAction->setShortcut(QKeySequence("CTRL+SHIFT+T"));
     m_addAnimationAction->setShortcut(QKeySequence("CTRL+SHIFT+R"));
 
@@ -1760,7 +1762,7 @@ void VirtualConsole::disableEdit()
     m_addSoloFrameAction->setShortcut(QKeySequence());
     m_addLabelAction->setShortcut(QKeySequence());
     m_addAudioTriggersAction->setShortcut(QKeySequence());
-    m_addBeatTriggersAction->setShortcut(QKeySequence());
+    //m_addBeatTriggersAction->setShortcut(QKeySequence());
     m_addClockAction->setShortcut(QKeySequence());
     m_addAnimationAction->setShortcut(QKeySequence());
 

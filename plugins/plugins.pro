@@ -31,6 +31,3 @@ SUBDIRS              += E1.31
 SUBDIRS              += loopback
 SUBDIRS              += osc
 SUBDIRS              += qm-dsp
-SUBDIRS              += samplerate
-SUBDIRS              += btrack
-#SUBDIRS              += btrack/modules-and-plug-ins/vamp-plugin/btrack_vamp.pro

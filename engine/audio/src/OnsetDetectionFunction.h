@@ -1,4 +1,4 @@
-//=======================================================================
+﻿//=======================================================================
 /** @file OnsetDetectionFunction.h
  *  @brief A class for calculating onset detection functions
  *  @author Adam Stark
@@ -31,32 +31,32 @@
 #endif
 
 #include <vector>
-
+#include <array>
 //=======================================================================
 /** The type of onset detection function to calculate */
 enum OnsetDetectionFunctionType
 {
-    EnergyEnvelope,
-    EnergyDifference,
-    SpectralDifference,
-    SpectralDifferenceHWR,
-    PhaseDeviation,
-    ComplexSpectralDifference,
-    ComplexSpectralDifferenceHWR,
-    HighFrequencyContent,
-    HighFrequencySpectralDifference,
-    HighFrequencySpectralDifferenceHWR
+    eEnergyEnvelope,
+    eEnergyDifference,
+    eSpectralDifference,
+    eSpectralDifferenceHWR,
+    ePhaseDeviation,
+    eComplexSpectralDifference,
+    eComplexSpectralDifferenceHWR,
+    eHighFrequencyContent,
+    eHighFrequencySpectralDifference,
+    eHighFrequencySpectralDifferenceHWR
 };
 
 //=======================================================================
 /** The type of window to use when calculating onset detection function samples */
 enum WindowType
 {
-    RectangularWindow,
-    HanningWindow,
-    HammingWindow,
-    BlackmanWindow,
-    TukeyWindow
+    eRectangularWindow,
+    eHanningWindow,
+    eHammingWindow,
+    eBlackmanWindow,
+    eTukeyWindow
 };
 
 //=======================================================================
@@ -67,48 +67,50 @@ public:
     
     /** Constructor that defaults the onset detection function type to ComplexSpectralDifferenceHWR
      * and the window type to HanningWindow
-     * @param hopSize_ the hop size in audio samples
-     * @param frameSize_ the frame size in audio samples
+     * @param hopSize_p the hop size in audio samples
+     * @param frameSize_p the frame size in audio samples
      */
-	OnsetDetectionFunction (int hopSize_, int frameSize_);
+    OnsetDetectionFunction (int hopSize_p, int frameSize_p);
     
     
     /** Constructor 
-     * @param hopSize_ the hop size in audio samples
-     * @param frameSize_ the frame size in audio samples
-     * @param onsetDetectionFunctionType_ the type of onset detection function to use - (see OnsetDetectionFunctionType)
-     * @param windowType the type of window to use (see WindowType)
+     * @param hopSize_p the hop size in audio samples
+     * @param frameSize_p the frame size in audio samples
+     * @param onsetDetectionFunctionType_p the type of onset detection function to use - (see OnsetDetectionFunctionType)
+     * @param windowType_p the type of window to use (see WindowType)
      */
-	OnsetDetectionFunction (int hopSize_, int frameSize_, int onsetDetectionFunctionType_, int windowType_);
+    OnsetDetectionFunction (int hopSize_p, int frameSize_p, int onsetDetectionFunctionType_p, int windowType_p);
     
     /** Destructor */
 	~OnsetDetectionFunction();
     
     /** Initialisation function for only updating hop size and frame size (and not window type 
      * or onset detection function type
-     * @param hopSize_ the hop size in audio samples
-     * @param frameSize_ the frame size in audio samples
+     * @param hopSize_p the hop size in audio samples
+     * @param frameSize_p the frame size in audio samples
      */
-	void initialise (int hopSize_, int frameSize_);
+    void initialise (int hopSize_p, int frameSize_p);
     
     /** Initialisation Function 
-     * @param hopSize_ the hop size in audio samples
-     * @param frameSize_ the frame size in audio samples
-     * @param onsetDetectionFunctionType_ the type of onset detection function to use - (see OnsetDetectionFunctionType)
-     * @param windowType the type of window to use (see WindowType)
+     * @param hopSize_p the hop size in audio samples
+     * @param frameSize_p the frame size in audio samples
+     * @param onsetDetectionFunctionType_p the type of onset detection function to use - (see OnsetDetectionFunctionType)
+     * @param windowType_p the type of window to use (see WindowType)
      */
-	void initialise (int hopSize_, int frameSize_, int onsetDetectionFunctionType_, int windowType_);
+    void initialise (int hopSize_p, int frameSize_p, int onsetDetectionFunctionType_p, int windowType_p);
 	
     /** Process input frame and calculate detection function sample 
-     * @param buffer a pointer to an array containing the audio samples to be processed
+     * @param buffer_p a pointer to an array containing the audio samples to be processed
      * @returns the onset detection function sample
      */
-	double calculateOnsetDetectionFunctionSample (double* buffer);
+    double calculateOnsetDetectionFunctionSample (double* buffer_p);
     
     /** Set the detection function type 
-     * @param onsetDetectionFunctionType_ the type of onset detection function to use - (see OnsetDetectionFunctionType)
+     * @param onsetDetectionFunctionType_p the type of onset detection function to use - (see OnsetDetectionFunctionType)
      */
-	void setOnsetDetectionFunctionType (int onsetDetectionFunctionType_);
+    void setOnsetDetectionFunctionType (int onsetDetectionFunctionType_p);
+
+    double GetMagSpecSum() const { return m_MagSpecSum; }
 	
 private:
 	
@@ -164,49 +166,51 @@ private:
 
     //=======================================================================
 	/** Set phase values between [-pi, pi] 
-     * @param phaseVal the phase value to process
+     * @param phaseVal_p the phase value to process
      * @returns the wrapped phase value
      */
-	double princarg(double phaseVal);
+    double princarg(double phaseVal_p);
 	
     void initialiseFFT();
     void freeFFT();
 	
-	double pi;							/**< pi, the constant */
+    double m_Pi;							/**< pi, the constant */
 	
-	int frameSize;						/**< audio framesize */
-	int hopSize;						/**< audio hopsize */
-	int onsetDetectionFunctionType;		/**< type of detection function */
-    int windowType;                     /**< type of window used in calculations */
+    int m_FrameSize;						/**< audio framesize */
+    int m_HopSize;						/**< audio hopsize */
+    int m_OnsetDetectionFunctionType;		/**< type of detection function */
+    int m_WindowType;                     /**< type of window used in calculations */
 
     //=======================================================================
 #ifdef USE_FFTW
-	fftw_plan p;						/**< fftw plan */
-	fftw_complex* complexIn;			/**< to hold complex fft values for input */
-	fftw_complex* complexOut;			/**< to hold complex fft values for output */
+    //fftw_plan m_Plan;						/**< fftw plan */
+    fftw_complex* m_ComplexIn;			/**< to hold complex fft values for input */
+    fftw_complex* m_ComplexOut;			/**< to hold complex fft values for output */
 #endif
     
 #ifdef USE_KISS_FFT
-    kiss_fft_cfg cfg;                   /**< Kiss FFT configuration */
-    kiss_fft_cpx* fftIn;                /**< FFT input samples, in complex form */
-    kiss_fft_cpx* fftOut;               /**< FFT output samples, in complex form */
-    std::vector<std::vector<double> > complexOut;
+    kiss_fft_cfg m_Cfg;                   /**< Kiss FFT configuration */
+    kiss_fft_cpx* m_FFTIn;                /**< FFT input samples, in complex form */
+    kiss_fft_cpx* m_FFTOut;               /**< FFT output samples, in complex form */
+    std::vector<std::array<double,2> >  m_ComplexOut;
 #endif
 	
     //=======================================================================
-	bool initialised;					/**< flag indicating whether buffers and FFT plans are initialised */
+    bool m_Initialised = false;					/**< flag indicating whether buffers and FFT plans are initialised */
 
-    std::vector<double> frame;          /**< audio frame */
-    std::vector<double> window;         /**< window */
+    std::vector<double> m_Frame;          /**< audio frame */
+    std::vector<double> m_Window;         /**< window */
 	
-	double prevEnergySum;				/**< to hold the previous energy sum value */
+    double m_PrevEnergySum;				/**< to hold the previous energy sum value */
 	
-    std::vector<double> magSpec;        /**< magnitude spectrum */
-    std::vector<double> prevMagSpec;    /**< previous magnitude spectrum */
+    double m_MagSpecSum = 0;
+
+    std::vector<double> m_MagSpec;        /**< magnitude spectrum */
+    std::vector<double> m_PrevMagSpec;    /**< previous magnitude spectrum */
 	
-    std::vector<double> phase;          /**< FFT phase values */
-    std::vector<double> prevPhase;      /**< previous phase values */
-    std::vector<double> prevPhase2;     /**< second order previous phase values */
+    std::vector<double> m_Phase;          /**< FFT phase values */
+    std::vector<double> m_PrevPhase;      /**< previous phase values */
+    std::vector<double> m_PrevPhase2;     /**< second order previous phase values */
 
 };
 

@@ -38,12 +38,16 @@ public:
     void setMaxFrequency(int freq);
 
     uchar getUcharVolume();
+    uchar getUcharBeat();
+    uchar getUcharBPM();
     uchar getUcharBand(int idx);
 
 signals:
 
 public slots:
     void displaySpectrum(double *spectrumData, double maxMagnitude, quint32 power);
+    void displayBeat(const bool isBeat_p);
+    void displayBPM(const quint32 bpm_p);
 
 protected:
     void resizeEvent (QResizeEvent *e);
@@ -53,6 +57,8 @@ private:
     double *m_spectrumBands;
     int m_spectrumHeight;
     quint32 m_volumeBarHeight;
+    quint32 m_beatBarHeight;
+    quint32 m_bpmBarHeight;
 
     int m_barsNumber;
     float m_barWidth;

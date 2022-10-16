@@ -16,7 +16,22 @@ CONFIG += link_pkgconfig
 
 INCLUDEPATH += ../../src ../../../plugins/interfaces
 
+# Beat tracking
+INCLUDEPATH += ../plugins/kissfft/
+INCLUDEPATH += ../plugins/samplerate/include
+
+DEPENDPATH  += ../plugins/kissfft
+DEPENDPATH  += ../plugins/samplerate
+QMAKE_LIBDIR+= ../plugins/kissfft
+QMAKE_LIBDIR+= ../plugins/samplerate
+
+LIBS        +=  -lkissfft -lsamplerate
+DEFINES += USE_KISS_FFT
+
 HEADERS += audio.h \
+           BTrack.h \
+           CircularBuffer.h \
+           OnsetDetectionFunction.h \
            audiodecoder.h \
            audiorenderer.h \
            audioparameters.h \
@@ -32,6 +47,9 @@ else {
 }
 
 SOURCES += audio.cpp \
+           BTrack.cpp \
+           CircularBuffer.cpp \
+           OnsetDetectionFunction.cpp \
            audiodecoder.cpp \
            audiorenderer.cpp \
            audioparameters.cpp \
