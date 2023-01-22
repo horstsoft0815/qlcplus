@@ -414,10 +414,10 @@ bool InputOutputMap::setInputPatch(quint32 universe, const QString &pluginName,
                        this, SLOT(slotMIDIBeat(quint32,quint32,uchar)));
         }
     }
-    InputPatch *ip = NULL;
-    QLCIOPlugin *plugin = doc()->ioPluginCache()->plugin(pluginName);
+    InputPatch* ip = NULL;
+    QLCIOPlugin* plugin = doc()->ioPluginCache()->plugin(pluginName);
 
-    if (!inputUID.isEmpty())
+    if (!inputUID.isEmpty() && plugin)
     {
         QStringList inputs = plugin->inputs();
         int lIdx = inputs.indexOf(inputUID);
@@ -489,9 +489,9 @@ bool InputOutputMap::setOutputPatch(quint32 universe, const QString &pluginName,
     }
 
     QMutexLocker locker(&m_universeMutex);
-    QLCIOPlugin *plugin = doc()->ioPluginCache()->plugin(pluginName);
+    QLCIOPlugin* plugin = doc()->ioPluginCache()->plugin(pluginName);
 
-    if (!outputUID.isEmpty())
+    if (!outputUID.isEmpty() && plugin)
     {
         QStringList inputs = plugin->outputs();
         int lIdx = inputs.indexOf(outputUID);

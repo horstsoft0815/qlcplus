@@ -158,44 +158,48 @@ bool RGBScript::evaluate()
     m_rgbMapStepCount = QScriptValue();
     m_apiVersion = 0;
 
-    m_script = s_engine->evaluate(m_contents, m_fileName);
-    if (s_engine->hasUncaughtException() == true)
+    if(s_engine)
     {
-        QString msg("%1: %2");
-        qWarning() << msg.arg(m_fileName).arg(s_engine->uncaughtException().toString());
-        foreach (QString s, s_engine->uncaughtExceptionBacktrace())
-            qDebug() << s;
-        return false;
-    }
-    else
-    {
-        m_rgbMap = m_script.property("rgbMap");
-        if (m_rgbMap.isFunction() == false)
+        m_script = s_engine->evaluate(m_contents, m_fileName);
+        if (s_engine->hasUncaughtException() == true)
         {
-            qWarning() << m_fileName << "is missing the rgbMap() function!";
+            QString msg("%1: %2");
+            qWarning() << msg.arg(m_fileName).arg(s_engine->uncaughtException().toString());
+            foreach (QString s, s_engine->uncaughtExceptionBacktrace())
+                qDebug() << s;
             return false;
-        }
-
-        m_rgbMapStepCount = m_script.property("rgbMapStepCount");
-        if (m_rgbMapStepCount.isFunction() == false)
-        {
-            qWarning() << m_fileName << "is missing the rgbMapStepCount() function!";
-            return false;
-        }
-
-        m_apiVersion = m_script.property("apiVersion").toInteger();
-        if (m_apiVersion > 0)
-        {
-            if (m_apiVersion == 2)
-                return loadProperties();
-            return true;
         }
         else
         {
-            qWarning() << m_fileName << "has an invalid apiVersion:" << m_apiVersion;
-            return false;
+            m_rgbMap = m_script.property("rgbMap");
+            if (m_rgbMap.isFunction() == false)
+            {
+                qWarning() << m_fileName << "is missing the rgbMap() function!";
+                return false;
+            }
+
+            m_rgbMapStepCount = m_script.property("rgbMapStepCount");
+            if (m_rgbMapStepCount.isFunction() == false)
+            {
+                qWarning() << m_fileName << "is missing the rgbMapStepCount() function!";
+                return false;
+            }
+
+            m_apiVersion = m_script.property("apiVersion").toInteger();
+            if (m_apiVersion > 0)
+            {
+                if (m_apiVersion == 2)
+                    return loadProperties();
+                return true;
+            }
+            else
+            {
+                qWarning() << m_fileName << "has an invalid apiVersion:" << m_apiVersion;
+                return false;
+            }
         }
     }
+    return false;
 }
 
 void RGBScript::initEngine()
