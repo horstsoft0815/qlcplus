@@ -696,7 +696,9 @@ void AudioCapture::detectBeat(QSharedPointer<BTrack> bTrack_p)
             isBeat = true;
         }
 
-        const quint32 tempo = static_cast<quint32>(bTrack_p->getTempo()); // limited < 160, hence no overflow problems
+        //const quint32 tempo = static_cast<quint32>(bTrack_p->getTempo()); // limited < 160, hence no overflow problems
+
+        const quint32 tempo = static_cast<quint32>(bTrack_p->getCurrentTempoEstimate());
 
         emit detectedBeat(isBeat);
         emit detectedBPM(tempo);

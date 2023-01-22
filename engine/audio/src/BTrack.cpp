@@ -29,6 +29,23 @@
 
 
 #define CIRCULARBUFFERFAC 1
+#define MINBPM 80
+#define MAXBPM 180
+
+// firstly make sure tempo is between min and max bpm..
+static void ReduceTempo(double& tempo_p)
+{
+    while (tempo_p > MAXBPM)
+    {
+        tempo_p = tempo_p/2;
+    }
+#if 0
+    while (tempo_p < MINBPM)
+    {
+        tempo_p = tempo_p * 2;
+    }
+#endif
+}
 
 //=======================================================================
 BTrack::BTrack()
@@ -319,12 +336,12 @@ void BTrack::processOnsetDetectionFunctionSample (double newSample_p)
                 && !IsStrongPowerTrend(m_SpectralPower))
         {
             m_BeatDueInFrame = true;	// indicate a beat should be output
-            m_PowerAtLastBeat = magSpecSum;
+            m_PowerAtLastBeat = std::abs(magSpecSum);
         }
 
 		// recalculate the tempo
 		resampleOnsetDetectionFunction();
-		calculateTempo();
+        calculateTempo(magSpecSum);
 	}
 }
 
@@ -334,16 +351,10 @@ void BTrack::setTempo (double tempo_p)
 	
 	/////////// TEMPO INDICATION RESET //////////////////
 	
-	// firstly make sure tempo is between 80 and 160 bpm..
-    while (tempo_p > 160)
-	{
-        tempo_p = tempo_p/2;
-	}
-	
-    while (tempo_p < 80)
-	{
-        tempo_p = tempo_p * 2;
-	}
+
+    ReduceTempo(tempo_p);
+
+    m_Tempo = tempo_p;
 		
 	// convert tempo from bpm value to integer index of tempo probability 
     int tempo_index = (int) round((tempo_p - 80)/2);
@@ -398,16 +409,10 @@ void BTrack::setTempo (double tempo_p)
 //=======================================================================
 void BTrack::fixTempo (double tempo_p)
 {	
-	// firstly make sure tempo is between 80 and 160 bpm..
-    while (tempo_p > 160)
-	{
-        tempo_p = tempo_p/2;
-	}
-	
-    while (tempo_p < 80)
-	{
-        tempo_p = tempo_p * 2;
-	}
+    // firstly make sure tempo is between 40 and 160 bpm..
+    ReduceTempo(tempo_p);
+
+    m_Tempo = tempo_p;
 	
 	// convert tempo from bpm value to integer index of tempo probability 
     int tempo_index = (int) round((tempo_p - 80)/2);
@@ -469,7 +474,7 @@ void BTrack::resampleOnsetDetectionFunction()
 }
 
 //=======================================================================
-void BTrack::calculateTempo()
+void BTrack::calculateTempo(const double magSpecSum_p)
 {
 	// adaptive threshold on input
     adaptiveThreshold (m_ResampledOnsetDF,512);
@@ -547,7 +552,16 @@ void BTrack::calculateTempo()
 	
     if (m_BeatPeriod > 0)
 	{
-        m_EstimatedTempo = 60.0/((((double) m_HopSize) / 44100.0) * m_BeatPeriod);
+        if(std::abs(magSpecSum_p) < 0.3*m_PowerAtLastBeat || std::abs(magSpecSum_p) < 0.1)
+        {
+            m_EstimatedTempo *= 0.9;
+        }
+        else
+        {
+            m_EstimatedTempo = 60.0/((((double) m_HopSize) / 44100.0) * m_BeatPeriod);
+        }
+
+        ReduceTempo(m_EstimatedTempo);
 	}
 }
 

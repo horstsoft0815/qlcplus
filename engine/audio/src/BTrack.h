@@ -147,7 +147,7 @@ private:
     void predictBeat();
     
     /** Calculates the current tempo expressed as the beat period in detection function samples */
-    void calculateTempo();
+    void calculateTempo(const double magSpecSum_p);
     
     /** Calculates an adaptive threshold which is used to remove low level energy from detection
      * function and emphasise peaks 

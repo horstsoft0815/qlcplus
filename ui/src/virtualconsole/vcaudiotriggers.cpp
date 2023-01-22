@@ -205,8 +205,10 @@ void VCAudioTriggers::enableCapture(bool enable)
             connect(m_inputCapture, SIGNAL(detectedBeat(const bool)),
                     this, SLOT(slotDetectBeat(const bool)));
 
-            connect(m_inputCapture, SIGNAL(detectedBPM(const quint32)),
-                    this, SLOT(slotDetectBPM(const quint32)));
+            bool success = connect(m_inputCapture, &AudioCapture::detectedBPM,
+                    this, &VCAudioTriggers::slotDisplayBPM);
+
+            Q_ASSERT(success);
         }
 
         m_inputCapture->registerBandsNumber(m_spectrum->barsNumber());
@@ -661,8 +663,10 @@ void VCAudioTriggers::editProperties()
                     connect(m_inputCapture, SIGNAL(detectedBeat(const bool)),
                             this, SLOT(slotDetectBeat(const bool)));
 
-                    connect(m_inputCapture, SIGNAL(detectedBPM(const quint32)),
-                            this, SLOT(slotDetectBPM(const quint32)));
+                    bool success = connect(m_inputCapture, &AudioCapture::detectedBPM,
+                                           this, &VCAudioTriggers::slotDisplayBPM);
+
+                    Q_ASSERT(success);
                 }
             }
         }

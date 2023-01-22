@@ -325,8 +325,8 @@ void OnsetDetectionFunction::performFFT()
         m_ComplexOut[n][1] = 0;
     }
 
-    // consider only data < 5000Hz
-    double SPECTRUM_MAX_FREQUENCY = 2500;
+    // consider only data < 800Hz
+    double SPECTRUM_MAX_FREQUENCY = 400;
     double sampleRate = 44100;
     int number_of_bands = 1;
     size_t subBandWidth = static_cast<size_t>(((m_ComplexOut.size() * SPECTRUM_MAX_FREQUENCY) / sampleRate) / number_of_bands);

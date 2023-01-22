@@ -102,7 +102,7 @@ void AudioTriggerWidget::displayBeat(const bool isBeat_p)
 
 void AudioTriggerWidget::displayBPM(const quint32 bpm_p)
 {
-    m_bpmBarHeight = (bpm_p * m_spectrumHeight) / 0x7FFF; // 32767
+    m_bpmBarHeight = (bpm_p * m_spectrumHeight) / 180; // 32767
 
     update();
 }
@@ -195,5 +195,5 @@ void AudioTriggerWidget::paintEvent(QPaintEvent *e)
 
     painter.setBrush(QBrush(Qt::blue));
     //qDebug() << "Paint spectrum -- beat bar height:" << m_beatBarHeight;
-    painter.drawRect(width() - m_barWidth + 1, m_spectrumHeight - m_beatBarHeight, m_barWidth - 2, m_beatBarHeight);
+    painter.drawRect(width() - m_barWidth + 1, m_spectrumHeight - m_bpmBarHeight, m_barWidth - 2, m_bpmBarHeight);
 }
